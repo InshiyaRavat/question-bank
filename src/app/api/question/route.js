@@ -1,4 +1,5 @@
 import { PrismaClient } from "../../../../generated/prisma";
+import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
@@ -46,12 +47,7 @@ export async function GET(req) {
 
     console.log("Filtered Questions:", questions);
 
-    // Step 3: Shuffle and limit to 50
-    const shuffled = questions
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 50);
-
-    return new Response(JSON.stringify(shuffled), {
+    return new Response(JSON.stringify(questions), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
@@ -61,5 +57,46 @@ export async function GET(req) {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
+  }
+}
+
+
+export async function POST(req) {
+  try {
+    const body = await req.json();
+
+    const { questionText, options, correctOptionIdx, explanation, topicId } = body;
+
+    if (!questionText || !options || correctOptionIdx === undefined || !topicId) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const topicIdInt = parseInt(topicId);
+
+    const [question] = await prisma.$transaction([
+      prisma.question.create({
+        data: {
+          questionText,
+          options,
+          correctOptionIdx,
+          explanation: explanation || null,
+          topicId: topicIdInt,
+        },
+      }),
+      prisma.topic.update({
+        where: { id: topicIdInt },
+        data: {
+          noOfQuestions: {
+            increment: 1,
+          },
+        },
+      }),
+    ]);
+
+
+    return NextResponse.json(question, { status: 201 });
+  } catch (error) {
+    console.error("Error adding question:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

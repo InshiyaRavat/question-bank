@@ -40,7 +40,10 @@ const Question = (props) => {
     fetch(`/api/question?${queryString}`)
       .then(res => res.json())
       .then(data => {
-        setQuestions(data);
+        const shuffled = data
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 50);
+        setQuestions(shuffled);
       })
       .catch(err => console.error("Error fetching questions:", err));
   }, [isLoaded, isSignedIn, user, selectedTopics]);
