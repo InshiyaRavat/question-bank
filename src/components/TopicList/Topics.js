@@ -50,7 +50,7 @@ const Topics = () => {
       };
       checkAndCreateUser();
     }
-  }, [isLoaded, isSignedIn, user]);
+  }, [isLoaded, isSignedIn, setTotalQuestions, user]);
 
   useEffect(() => {
     fetch('/api/subject')

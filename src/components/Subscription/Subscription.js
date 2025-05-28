@@ -1,6 +1,6 @@
 'use client'
 import React, { useContext, useEffect } from 'react'
-import '../Style/subscription.css'
+import '../../Style/subscription.css'
 import { useRouter } from 'next/navigation'
 import { PlanContext } from '@/context/PlanContext'
 

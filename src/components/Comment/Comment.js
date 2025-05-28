@@ -1,8 +1,8 @@
 import { useUser, getUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from 'react'
 import Image from "next/image";
-import downvote from '../assets/downvote.svg';
-import upvote from '../assets/upvote.svg';
+import downvote from '../../assets/downvote.svg';
+import upvote from '../../assets/upvote.svg';
 
 const Comment = (props) => {
   const [comments, setComments] = useState([])

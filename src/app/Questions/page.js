@@ -1,5 +1,5 @@
 'use client';
-import Question from '@/components/Question';
+import Question from '@/components/Question/Question';
 import { useRouter } from 'next/navigation';
 import React, { useState,useEffect } from 'react';
 

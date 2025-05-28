@@ -1,9 +1,9 @@
 'use client'
-import Topics from "@/components/Topics";
-import Header from "@/components/Header";
+import Topics from "@/components/TopicList/Topics";
+import Header from "@/components/Header/Header";
 import React, { useContext } from "react";
 import { AttemptedQuestionContext } from '@/context/AttemptedQuestionContext'
-import Mode from "@/components/Mode";
+import Mode from "@/components/TopicList/Mode";
 
 export default function QuestionTopic() {
   const { totalQuestions } = useContext(AttemptedQuestionContext);

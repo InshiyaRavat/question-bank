@@ -2,10 +2,10 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { SelectedTopicsContext } from '@/context/SelectedTopicsContext'
-import CountdownTimer from './CountdownTimer'
-import Stopwatch from './Stopwatch'
+import CountdownTimer from '../Timer/CountdownTimer'
+import Stopwatch from '../Timer/Stopwatch'
 import QuestionPalette from './QuestionPalette'
-import Comment from './Comment'
+import Comment from '../Comment/Comment'
 import { useRouter } from 'next/navigation';
 
 const Question = (props) => {

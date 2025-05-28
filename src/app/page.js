@@ -1,33 +1,6 @@
-// 'use client'
-// import { useState,useEffect } from "react";
-
-// export default function Home() {
-//   const [data,setData] = useState();
-//   useEffect(() => {
-//     fetch(`/api/question`)
-//       .then(async (response) => {
-//         if (response.ok) {
-//           return await response.json();
-//         }
-//       })
-//       .then((data) => {
-//         setData(data)
-//         console.log(data)
-//       })
-//       .catch((error) => console.error("Error in fetching questions: ", error));
-//   }, []);
-//   return (
-//     <div>
-//       nothing
-//     </div>
-//   );
-// }
-
-
-
 'use client'
 import { UserButton, useUser } from "@clerk/nextjs"
-import Subscription from "@/components/Subscription"
+import Subscription from "@/components/Subscription/Subscription"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
@@ -50,7 +23,7 @@ export default function Home() {
     };
 
     isAdmin();
-  }, [isLoaded, isSignedIn, user]);
+  }, [isLoaded, isSignedIn, router, user]);
 
 
   useEffect(() => {
@@ -77,7 +50,7 @@ export default function Home() {
     };            
 
     getSubscriptionStatus();
-  }, [isLoaded, isSignedIn, user]);
+  }, [isLoaded, isSignedIn, router, user]);
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
