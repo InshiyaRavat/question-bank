@@ -1,36 +1,44 @@
-'use client'
+"use client";
 import Topics from "@/components/TopicList/Topics";
 import Header from "@/components/Header/Header";
 import React, { useContext } from "react";
-import { AttemptedQuestionContext } from '@/context/AttemptedQuestionContext'
+import { AttemptedQuestionContext } from "@/context/AttemptedQuestionContext";
 import Mode from "@/components/TopicList/Mode";
+import { UserButton } from "@clerk/nextjs";
 
 export default function QuestionTopic() {
   const { totalQuestions } = useContext(AttemptedQuestionContext);
 
   return (
-    <div className="flex flex-col lg:flex-row items-start gap-6 bg-gray-50 min-h-screen p-6">
-      
-      {/* Sidebar Header - shown only on large screens */}
-      <div className="hidden lg:block w-1/4 h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white rounded-lg shadow-xl p-5">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#E9D8A6] text-[#001219]">
+      {/* Sidebar Header - Desktop */}
+      <div className="hidden lg:block w-1/4 bg-[#001219] text-white shadow-xl">
         <Header />
       </div>
 
       {/* Main Content */}
-      <div className="w-full lg:flex-1 bg-white rounded-lg shadow-md p-8">
-        
-        {/* Mobile & Tablet Header */}
+      <div className="w-full lg:flex-1 p-6 sm:p-8 bg-[#fefcf3] shadow-inner min-h-screen flex flex-col">
+        {/* Mobile Header */}
         <div className="block lg:hidden mb-6">
           <Header />
         </div>
 
-        <h2 className="text-center text-2xl font-semibold text-gray-700 mb-6">
-          🎯 Total Questions Attempted:
-          <span className="text-blue-600 font-bold"> {totalQuestions}</span>
-        </h2>
+        <div className="bg-[#94D2BD] p-4 flex justify-between rounded-xl shadow text-center">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#001219]">
+            🎯 Total Questions Attempted:
+            <span className="text-[#005F73] ml-2">{totalQuestions}</span>
+          </h2>
+          <UserButton />
+        </div>
 
-        <Topics />
-        <Mode />
+        <div className="flex flex-col lg:flex-col flex-grow gap-8 py-8">
+          <div className="w-full">
+            <Mode />
+          </div>
+          <div className="w-full">
+            <Topics />
+          </div>
+        </div>
       </div>
     </div>
   );

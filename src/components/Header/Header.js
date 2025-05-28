@@ -35,12 +35,10 @@ const Header = () => {
         if (subscription.duration === 12)
           return alert("Already at maximum plan.");
         const expiresRaw = subscription.subscribedAt;
-        console.log(expiresRaw)
         if (!expiresRaw || isNaN(new Date(expiresRaw))) {
           alert("Invalid expiration date in subscription.");
           return;
         }
-
         const upgraded = new Date(expiresRaw);
         upgraded.setMonth(upgraded.getMonth() + 6);
         await fetch(`api/subscription/${subscription.id}`, {
@@ -87,9 +85,9 @@ const Header = () => {
   return (
     <div className="h-fit lg:h-screen w-full flex">
       {/* Sidebar (Desktop) */}
-      <div className="w-full hidden lg:flex flex-col justify-between bg-white shadow-lg p-6 ">
+      <div className="w-full hidden lg:flex flex-col justify-between bg-[#001219] p-6 rounded-lg shadow-xl text-white">
         <div>
-          <h2 className="text-3xl font-bold text-blue-900 mb-6">
+          <h2 className="text-3xl font-bold text-[#E9D8A6] mb-6">
             📚 Question Bank
           </h2>
           <nav className="flex flex-col gap-4">
@@ -98,83 +96,80 @@ const Header = () => {
               icon={<RefreshCw />}
               onClick={handleClick}
               text="Renew Subscription"
-              color="bg-sky-600"
+              color="bg-[#0A9396]"
             />
             <SidebarButton
               name="upgrade"
               icon={<ArrowUpRight />}
               onClick={handleClick}
               text="Upgrade Plan"
-              color="bg-emerald-600"
+              color="bg-[#EE9B00]"
             />
             <SidebarButton
               name="downgrade"
               icon={<ArrowDownLeft />}
               onClick={handleClick}
               text="Downgrade Plan"
-              color="bg-yellow-500"
+              color="bg-[#94D2BD] text-[#001219]"
             />
             <SidebarButton
               name="cancellation"
               icon={<XCircle />}
               onClick={handleClick}
               text="Cancel Subscription"
-              color="bg-rose-600"
+              color="bg-[#9B2226]"
             />
           </nav>
         </div>
-        <UserButton />
       </div>
 
-      {/* Topbar for Mobile/Tablet */}
-      <div className="flex flex-col lg:hidden w-full flex items-center justify-between">
-        <div className="lg:hidden w-full p-4 bg-white shadow flex  items-center justify-between">
-          <h2 className="text-2xl font-bold text-blue-900">
+      {/* Mobile View */}
+      <div className="flex flex-col lg:hidden w-full">
+        <div className="w-full p-4 bg-[#001219] shadow flex items-center justify-between text-[#E9D8A6]">
+          <h2 className="text-2xl font-bold">
             <span className="inline">📚</span>
             <span className="inline max-[399px]:hidden"> Question Bank</span>
           </h2>
-
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="text-blue-700 p-2 rounded-md hover:bg-blue-100"
+            className="text-[#E9D8A6] p-2 rounded-md hover:bg-[#005F73]"
           >
             {menuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
 
-        {/* Mobile Dropdown Menu */}
         {menuOpen && (
-          <div className="lg:hidden w-full px-4 py-6 bg-gradient-to-b from-blue-50 to-white">
+          <div className="w-full px-4 py-6 bg-gradient-to-b from-[#E9D8A6] to-[#FFF] rounded-b-xl">
             <div className="flex flex-col space-y-4">
               <SidebarButton
                 name="renewal"
                 icon={<RefreshCw />}
                 onClick={handleClick}
                 text="Renew Subscription"
-                color="bg-sky-600"
+                color="bg-[#0A9396]"
               />
               <SidebarButton
                 name="upgrade"
                 icon={<ArrowUpRight />}
                 onClick={handleClick}
                 text="Upgrade Plan"
-                color="bg-emerald-600"
+                color="bg-[#EE9B00]"
               />
               <SidebarButton
                 name="downgrade"
                 icon={<ArrowDownLeft />}
                 onClick={handleClick}
                 text="Downgrade Plan"
-                color="bg-yellow-500"
+                color="bg-[#94D2BD] text-[#001219]"
               />
               <SidebarButton
                 name="cancellation"
                 icon={<XCircle />}
                 onClick={handleClick}
                 text="Cancel Subscription"
-                color="bg-rose-600"
+                color="bg-[#9B2226]"
               />
-              <div className="pt-4">
+              <div className="pt-4 flex justify-center">
                 <UserButton />
               </div>
             </div>
@@ -189,7 +184,7 @@ const SidebarButton = ({ name, icon, onClick, text, color }) => (
   <button
     name={name}
     onClick={onClick}
-    className={`flex items-center gap-3 px-4 py-3 text-white rounded-lg shadow-md ${color} hover:brightness-110 transition text-base font-semibold w-full`}
+    className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-md transition text-base font-semibold w-full ${color} hover:brightness-110`}
   >
     <span className="shrink-0">{icon}</span>
     <span>{text}</span>

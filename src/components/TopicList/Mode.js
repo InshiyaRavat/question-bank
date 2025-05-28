@@ -1,111 +1,111 @@
-'use client'
-import { UserButton } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+"use client";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 
 const Mode = () => {
-    const [isTest, setIsTest] = useState(false)
-    const [isTimed, setIsTimedTest] = useState(false)
-    const [isStopwatchEnabled, setIsStopwatchEnabled] = useState(false)
-    const router = useRouter()
+  const [isTest, setIsTest] = useState(false);
+  const [isTimed, setIsTimedTest] = useState(false);
+  const [isStopwatchEnabled, setIsStopwatchEnabled] = useState(false);
+  const router = useRouter();
 
-    const handleSelection = (e) => {
-        setIsTest(e.target.value === 'test')
+  const handleSelection = (e) => {
+    setIsTest(e.target.value === "test");
+  };
+
+  const handleTypeChange = (e) => {
+    setIsTimedTest(e.target.value === "timed");
+  };
+
+  const handleStopwatchToggle = (e) => {
+    setIsStopwatchEnabled(e.target.checked);
+  };
+
+  const handleClick = () => {
+    if (isTest) {
+      router.push(`/Questions?type=${isTimed ? "timed" : "untimed"}`);
+    } else {
+      const stopwatchParam = isStopwatchEnabled ? "on" : "off";
+      router.push(`/Questions?type=practice&stopwatch=${stopwatchParam}`);
     }
+  };
 
-    const handleTypeChange = (e) => {
-        setIsTimedTest(e.target.value === 'timed')
-    }
+  return (
+    <div className="w-full flex flex-col sm:flex-wrap sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg shadow-sm border border-[#E0E0E0] text-[#001219] bg-white">
+      {/* Mode Selection */}
+      <div className="flex flex-wrap items-center gap-2">
+        {["Practice", "Test"].map((mode, index) => (
+          <label key={index} className="flex items-center">
+            <input
+              type="radio"
+              name="mode"
+              value={mode.toLowerCase()}
+              onChange={handleSelection}
+              defaultChecked={index === 0}
+              className="hidden"
+            />
+            <span
+              className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all ${
+                isTest === (index === 1)
+                  ? "bg-[#0A9396] text-white"
+                  : "bg-[#E9D8A6] text-[#001219] hover:bg-[#CA6702]/90"
+              }`}
+            >
+              {mode}
+            </span>
+          </label>
+        ))}
+      </div>
 
-    const handleStopwatchToggle = (e) => {
-        setIsStopwatchEnabled(e.target.checked)
-    }
+      {/* Stopwatch Toggle */}
+      {!isTest && (
+        <label className="flex items-center gap-2 bg-[#94D2BD]/30 px-3 py-2 rounded-full text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={isStopwatchEnabled}
+            onChange={handleStopwatchToggle}
+            className="w-4 h-4 text-[#0A9396] border-gray-300 rounded focus:ring focus:ring-[#0A9396]"
+          />
+          Enable Stopwatch
+        </label>
+      )}
 
-    const handleClick = () => {
-        if (isTest) {
-            router.push(`/Questions?type=${isTimed ? 'timed' : 'untimed'}`)
-        } else {
-            const stopwatchParam = isStopwatchEnabled ? 'on' : 'off'
-            router.push(`/Questions?type=practice&stopwatch=${stopwatchParam}`)
-        }
-    }
-
-    return (
-        <div>
-            <UserButton/>
-            {/* Mode Selection */}
-            <div className="flex justify-start space-x-6 p-4">
-                {['Practice', 'Test'].map((mode, index) => (
-                    <label key={index} className="relative flex cursor-pointer">
-                        <input
-                            type="radio"
-                            name="mode"
-                            value={mode.toLowerCase()}
-                            onChange={handleSelection}
-                            defaultChecked={index === 0}
-                            className="hidden"
-                        />
-                        <span className={`px-6 py-3 rounded-full font-medium transition-all shadow-md ${
-                            isTest === (index === 1) 
-                                ? 'bg-blue-600 text-white shadow-blue-400' 
-                                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        }`}>
-                            {mode} Mode
-                        </span>
-                    </label>
-                ))}
-            </div>
-
-            {/* Stopwatch toggle for Practice Mode */}
-            {!isTest && (
-                <div className="flex justify-start ml-3 mt-4">
-                    <label className="flex items-center space-x-3 bg-gray-200 p-3 rounded-lg shadow-inner">
-                        <input
-                            type="checkbox"
-                            checked={isStopwatchEnabled}
-                            onChange={handleStopwatchToggle}
-                            className="w-5 h-5 text-blue-600 border-gray-300 rounded-lg focus:ring focus:ring-blue-400"
-                        />
-                        <span className="text-gray-800 font-medium">Enable Stopwatch</span>
-                    </label>
-                </div>
-            )}
-
-            {/* Test Type Options */}
-            {isTest && (
-                <div className="flex justify-center space-x-6 p-4">
-                    {['Timed', 'Untimed'].map((type, index) => (
-                        <label key={index} className="relative flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                name="type"
-                                value={type.toLowerCase()}
-                                onChange={handleTypeChange}
-                                className="hidden"
-                            />
-                            <span className={`px-6 py-3 rounded-full font-medium transition-all shadow-md ${
-                                isTimed === (index === 0) 
-                                    ? 'bg-green-500 text-white shadow-green-400' 
-                                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                            }`}>
-                                {type} Test
-                            </span>
-                        </label>
-                    ))}
-                </div>
-            )}
-
-            {/* Start Button */}
-            <div className="flex justify-center mt-6">
-                <button
-                    className="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition-all hover:scale-105 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    onClick={handleClick}
-                >
-                    🚀 Start
-                </button>
-            </div>
+      {/* Test Type */}
+      {isTest && (
+        <div className="flex flex-wrap items-center gap-2">
+          {["Timed", "Untimed"].map((type, index) => (
+            <label key={index} className="flex items-center">
+              <input
+                type="radio"
+                name="type"
+                value={type.toLowerCase()}
+                onChange={handleTypeChange}
+                className="hidden"
+              />
+              <span
+                className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all ${
+                  isTimed === (index === 0)
+                    ? "bg-[#EE9B00] text-white"
+                    : "bg-[#E9D8A6] text-[#001219] hover:bg-[#CA6702]/90"
+                }`}
+              >
+                {type}
+              </span>
+            </label>
+          ))}
         </div>
-    )
-}
+      )}
 
-export default Mode
+      {/* Start Button */}
+      <div className="w-full sm:w-auto">
+        <button
+          onClick={handleClick}
+          className="w-full sm:w-auto bg-[#BB3E03] hover:bg-[#AE2012] text-white text-sm font-semibold py-2 px-6 rounded-full shadow-sm transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#CA6702]"
+        >
+          🚀 Start
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Mode;
