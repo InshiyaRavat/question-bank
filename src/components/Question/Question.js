@@ -28,9 +28,7 @@ const Question = (props) => {
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
-    console.log("selectedTopics:", selectedTopics); 
     const topicIds = Object.keys(selectedTopics).filter(id => selectedTopics[id]);
-    console.log("Filtered topicIds:", topicIds);
     const queryParams = new URLSearchParams();
     queryParams.append('userId', user.id);
     topicIds.forEach(id => queryParams.append('topicId', id));
@@ -48,13 +46,10 @@ const Question = (props) => {
       .catch(err => console.error("Error fetching questions:", err));
   }, [isLoaded, isSignedIn, user, selectedTopics]);
 
-
-  console.log("Questions:", questions);
-
   if (!questions) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-100">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+      <div className="flex justify-center items-center min-h-screen bg-[#E9D8A6]">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-[#0A9396]"></div>
       </div>
     )
   }
@@ -112,16 +107,14 @@ const Question = (props) => {
     updatedQuestions[currentIndex].isAttempted = 'true';
     setQuestions(updatedQuestions);
 
-    // Increment the questionsAttempted count for this topic and user
     await fetch('/api/attempted-question', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: user.id,
-        topicId: questions[currentIndex].topicId, // Ensure this is a number
+        topicId: questions[currentIndex].topicId,
       }),
     });
-    // handleNext();
   }
 
   const toggleExplanation = () => setShowExplanation(prev => !prev)
@@ -142,9 +135,9 @@ const Question = (props) => {
 
   if (type === 'practice' && currentIndex >= questions.length) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <h2 className="text-xl font-semibold text-gray-700">
-          Practice session completed! You attempted all 50 questions.
+      <div className="flex justify-center items-center min-h-screen bg-[#E9D8A6]">
+        <h2 className="text-xl font-semibold text-[#001219]">
+          Practice session completed! You attempted all questions.
         </h2>
       </div>
     )
@@ -154,8 +147,8 @@ const Question = (props) => {
 
   if (!currentQuestion) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-100">
-        <div className="text-gray-700 text-lg">Loading question...</div>
+      <div className="flex justify-center items-center min-h-screen bg-[#E9D8A6]">
+        <div className="text-[#005F73] text-lg">Loading question...</div>
       </div>
     );
   }
@@ -165,22 +158,21 @@ const Question = (props) => {
     localStorage.setItem('incorrectQuestions', incorrectQuestions);
     router.push(`/Result?score=${score}&incorrectCount=${incorrectCount}&correctCount=${correctCount}`);
   }
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="flex justify-between items-center bg-blue-600 text-white px-6 py-4 shadow-md">
+    <div className="flex flex-col text-[#001219]">
+      <header className="flex justify-between items-center bg-[#0A9396] text-white px-6 py-4 shadow mb-4">
         <h1 className="text-xl font-bold">
           {type === 'practice' ? 'Practice Mode' : 'Test Mode'}
         </h1>
         <button
-          className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-transform duration-200 transform hover:scale-105 focus:ring-2 focus:ring-red-300"
+          className="bg-[#AE2012] hover:bg-[#9B2226] text-white font-semibold py-2 px-4 rounded-lg"
           onClick={endTest}
         >
           End {type === 'practice' ? 'Practice' : 'Test'}
         </button>
       </header>
 
-      {/* Timer */}
       {(type === 'timed' || (type === 'practice' && stopwatch === 'on')) && (
         <div className="w-full flex justify-center py-4">
           {type === 'timed' ? (
@@ -191,18 +183,13 @@ const Question = (props) => {
         </div>
       )}
 
-      {/* Main Content */}
       <main className="flex flex-grow flex-col items-center px-4">
         <div className="flex flex-col lg:flex-row w-full max-w-6xl gap-6">
-          {/* Question Section */}
           <div className="bg-white shadow-lg rounded-xl p-6 flex-grow w-full lg:w-3/4">
-
-            {/* Question */}
-            <h4 className="text-xl font-semibold text-center text-blue-700 mb-4">
+            <h4 className="text-xl font-semibold text-center text-[#005F73] mb-4">
               {currentQuestion.questionText}
             </h4>
 
-            {/* Options */}
             <div className="space-y-3 mb-6">
               {currentQuestion.options.map((option, index) => {
                 const isSelected = selectedOption === index;
@@ -213,18 +200,18 @@ const Question = (props) => {
 
                 const bgClass = isSelected
                   ? !isTestMode && isCorrectAnswer
-                    ? 'bg-green-100 border-green-500'
+                    ? 'bg-[#94D2BD] border-[#0A9396]'
                     : !isTestMode && isIncorrect
-                      ? 'bg-red-100 border-red-500'
-                      : 'bg-blue-100 border-blue-500'
+                      ? 'bg-[#EE9B00] border-[#CA6702]'
+                      : 'bg-[#E9D8A6] border-[#BB3E03]'
                   : !isTestMode && isAnswer && hasSubmitted
-                    ? 'bg-green-100 border-green-500'
+                    ? 'bg-[#94D2BD] border-[#0A9396]'
                     : 'bg-white border-gray-300';
 
                 return (
                   <label
                     key={index}
-                    className={`block p-4 border rounded-lg cursor-pointer transition-all duration-200 ${bgClass} hover:bg-blue-50 text-gray-700`}
+                    className={`block p-4 border rounded-lg cursor-pointer transition-all duration-200 ${bgClass} hover:bg-[#f4f4f4]`}
                   >
                     <input
                       type="radio"
@@ -241,11 +228,9 @@ const Question = (props) => {
               })}
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-wrap justify-between items-center gap-4">
               <button
-                className={`bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 ${selectedOption === null && 'bg-blue-100 cursor-not-allowed'
-                  }`}
+                className={`bg-[#005F73] text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105 ${selectedOption === null && 'bg-opacity-50 cursor-not-allowed'}`}
                 onClick={handleSubmit}
                 disabled={selectedOption === null || hasSubmitted}
               >
@@ -256,7 +241,7 @@ const Question = (props) => {
                 {type === 'practice' && (
                   <button
                     onClick={toggleExplanation}
-                    className="bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700 focus:ring-2 focus:ring-gray-300"
+                    className="bg-[#CA6702] text-white font-semibold py-2 px-4 rounded-lg hover:bg-[#BB3E03]"
                   >
                     {showExplanation ? 'Hide Explanation' : 'Show Explanation'}
                   </button>
@@ -264,7 +249,7 @@ const Question = (props) => {
 
                 {(type === 'timed' || type === 'untimed') && (
                   <button
-                    className="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-300"
+                    className="bg-[#EE9B00] text-white font-semibold py-2 px-4 rounded-lg hover:bg-[#CA6702]"
                     onClick={() => markForReview(currentIndex)}
                   >
                     Mark for Review
@@ -272,7 +257,7 @@ const Question = (props) => {
                 )}
 
                 <button
-                  className="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-600 focus:ring-2 focus:ring-gray-300"
+                  className="bg-[#94D2BD] text-[#001219] font-semibold py-2 px-4 rounded-lg hover:bg-[#e0f7f5]"
                   onClick={handlePrevious}
                   disabled={currentIndex === 0}
                 >
@@ -280,7 +265,7 @@ const Question = (props) => {
                 </button>
 
                 <button
-                  className="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-600 focus:ring-2 focus:ring-gray-300"
+                  className="bg-[#94D2BD] text-[#001219] font-semibold py-2 px-4 rounded-lg hover:bg-[#e0f7f5]"
                   onClick={handleNext}
                 >
                   Next Question
@@ -288,18 +273,16 @@ const Question = (props) => {
               </div>
             </div>
 
-            {/* Explanation Section */}
             {showExplanation && type === 'practice' && (
-              <div className="mt-6 p-4 bg-gray-100 rounded-lg text-gray-700 border-l-4 border-blue-500">
+              <div className="mt-6 p-4 bg-[#f9f9f9] rounded-lg text-[#001219] border-l-4 border-[#0A9396]">
                 <p>{currentQuestion.explanation}</p>
               </div>
             )}
           </div>
 
-          {/* Sidebar */}
           <aside className="w-full lg:w-1/3">
             {type !== 'practice' ? (
-              <div className="bg-white rounded-xl shadow-md p-4">
+              <div>
                 <QuestionPalette
                   questions={questions}
                   currentIndex={currentIndex}
@@ -316,7 +299,6 @@ const Question = (props) => {
         </div>
       </main>
     </div>
-
   )
 }
 
