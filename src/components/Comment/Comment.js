@@ -17,7 +17,7 @@ const Comment = (props) => {
     isLoaded && user ? user.emailAddresses[0]?.emailAddress : null;
 
   const fetchComments = () => {
-    fetch("http://localhost:4000/comments")
+    fetch("/api/comment")
       .then((response) => response.json())
       .then((data) => setComments(data));
   };
@@ -33,13 +33,13 @@ const Comment = (props) => {
 
   const handleAddComment = () => {
     const newCommentObj = {
-      userid: user.id,
-      username: user.username,
-      questionid: props.questionid,
+      userId: user.id, 
+      username : user.username,
+      questionId : props.questionid, 
       comment: newComment,
-    };
+    }
 
-    fetch("http://localhost:4000/comments", {
+    fetch('/api/comment', {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -54,15 +54,15 @@ const Comment = (props) => {
   const handleAddReply = (commentId) => {
     console.log(commentId);
     const newReply = {
-      userid: user.id,
-      username: user.username,
-      commentid: commentId,
+      userId: user.id,
+      username : user.username, 
+      commentId: commentId,
       reply: reply,
       upvote: 0,
-      downvote: 0,
-    };
+      downvote:0,
+    }
 
-    fetch("http://localhost:4000/reply", {
+    fetch('/api/reply', {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -108,12 +108,12 @@ const Comment = (props) => {
   };
 
   const fetchRepliesForComment = (commentId) => {
-    fetch(`http://localhost:4000/reply?commentid=${commentId}`)
+    fetch(`/api/reply?commentid=${commentId}`)
       .then((response) => response.json())
       .then((data) => {
-        setReplies((prevReplies) => ({ ...prevReplies, [commentId]: data }));
-      });
-  };
+        setReplies((prevReplies) => ({ ...prevReplies, [commentId]: data }))
+      })
+  }
 
   const handleShowReplies = (commentId) => {
     if (showRepliesFor === commentId) {
@@ -130,7 +130,7 @@ const Comment = (props) => {
 
   const handleUpVote = async (id) => {
     try {
-      const response = await fetch(`http://localhost:4000/reply?id=${id}`);
+      const response = await fetch(`/api/reply/${id}`);
       const data = await response.json();
 
       if (data.length === 0) {
@@ -141,7 +141,7 @@ const Comment = (props) => {
       const currentReply = data[0];
       const newUpvoteCount = currentReply.upvote + 1;
 
-      await fetch(`http://localhost:4000/reply/${currentReply.id}`, {
+      await fetch(`/api/reply/${currentReply.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -149,7 +149,7 @@ const Comment = (props) => {
         body: JSON.stringify({ upvote: newUpvoteCount }),
       });
       console.log("Upvote updated successfully!");
-      fetchRepliesForComment(currentReply.commentid);
+      fetchRepliesForComment(currentReply.commentId);
     } catch (error) {
       console.error("Error upvoting:", error);
     }
@@ -157,7 +157,7 @@ const Comment = (props) => {
 
   const handleDownVote = async (id) => {
     try {
-      const response = await fetch(`http://localhost:4000/reply?id=${id}`);
+      const response = await fetch(`/api/reply/${id}`);
       const data = await response.json();
 
       if (data.length === 0) {
@@ -169,7 +169,7 @@ const Comment = (props) => {
       isFinite;
       const newDownvoteCount = currentReply.downvote + 1;
 
-      await fetch(`http://localhost:4000/reply/${currentReply.id}`, {
+      await fetch(`/api/reply/${currentReply.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -177,7 +177,7 @@ const Comment = (props) => {
         body: JSON.stringify({ downvote: newDownvoteCount }),
       });
       console.log("downvote updated successfully!");
-      fetchRepliesForComment(currentReply.commentid);
+      fetchRepliesForComment(currentReply.commentId);
     } catch (error) {
       console.error("Error downvoting:", error);
     }
@@ -214,7 +214,7 @@ const Comment = (props) => {
       {showComments && (
         <div className="space-y-4">
           {comments.map((comment) =>
-            props.questionid === comment.questionid ? (
+            props.questionid === comment.questionId ? (
               <div
                 key={comment.id}
                 className="bg-[#f0fdfa] border border-[#94D2BD] p-4 rounded-lg"
