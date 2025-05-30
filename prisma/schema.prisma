@@ -7,6 +7,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model AttemptedQuestion {
   id                 Int    @id @default(autoincrement())
   userId             String @map("user_id")
@@ -30,39 +31,39 @@ model Question {
   id               Int              @id @default(autoincrement())
   topicId          Int              @map("topic_id")
   questionText     String           @map("question_text")
-  options          String[]         
+  options          String[]
   correctOptionIdx Int              @map("correct_option_index")
-  explanation      String?          
+  explanation      String?
   comments         Comment[]
   topic            Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
   solvedQuestions  SolvedQuestion[]
 }
 
 model Reply {
-  id         Int      @id @default(autoincrement())
-  userId     String   @map("user_id")
-  username   String
-  commentId  Int      @map("comment_id")
-  reply      String
-  upvote     Int      @default(0)
-  downvote   Int      @default(0)
-  createdAt  DateTime @default(now()) @map("created_at")
-  comment    Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  username  String
+  commentId Int      @map("comment_id")
+  reply     String
+  upvote    Int      @default(0)
+  downvote  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
 }
 
 model SolvedQuestion {
-  id          Int      @id @default(autoincrement())
-  userId      String   @map("user_id")
-  questionId  Int      @map("question_id")
-  isCorrect   Boolean  @map("is_correct")
-  solvedAt    DateTime @default(now()) @map("solved_at")
-  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  userId     String   @map("user_id")
+  questionId Int      @map("question_id")
+  isCorrect  Boolean  @map("is_correct")
+  solvedAt   DateTime @default(now()) @map("solved_at")
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model Subject {
-  id      Int     @id @default(autoincrement())
-  name    String  @unique
-  topics  Topic[]
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  topics Topic[]
 }
 
 model Subscription {
@@ -74,11 +75,11 @@ model Subscription {
 }
 
 model Topic {
-  id                 Int                  @id @default(autoincrement())
+  id                 Int                 @id @default(autoincrement())
   name               String
-  noOfQuestions      Int                  @default(0) @map("no_of_questions")
-  subjectId          Int                  @map("subject_id")
+  noOfQuestions      Int                 @default(0) @map("no_of_questions")
+  subjectId          Int                 @map("subject_id")
   attemptedQuestions AttemptedQuestion[]
   questions          Question[]
-  subject            Subject              @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subject            Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 }

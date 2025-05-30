@@ -1,7 +1,7 @@
 "use client";
 import Question from "@/components/Question/Question";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 
 export default function Questions() {
   const router = useRouter();
@@ -18,11 +18,12 @@ export default function Questions() {
   };
   return (
     <div className="flex flex-col bg-gray-50 text-gray-800">
-
       {/* Main Content Section */}
       <main className="flex-grow flex justify-center items-center">
         <div className="w-full rounded-2xl mb-4">
-          <Question />
+          <Suspense fallback={<div>Loading...</div>}>
+            <Question />
+          </Suspense>
         </div>
       </main>
 
