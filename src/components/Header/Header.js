@@ -75,7 +75,7 @@ const Header = () => {
           body: JSON.stringify({ status: "inactive" }),
         });
         alert("Subscription canceled.");
-        router("/");
+        router.push("/");
         break;
       default:
         break;

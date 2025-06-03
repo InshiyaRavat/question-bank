@@ -43,29 +43,58 @@ const PayForm = () => {
             if (error) {
                 console.error(error.message)
             } else {
-                const subscriptionResponse = await fetch(`/api/subscription?userid=${user.id}`);
-                const subscriptionData = await subscriptionResponse.json();
-
                 const months = plan == 10 ? 6 : 12;
 
-                if (!subscriptionData.ok) {
-                    const newSubscriber = await fetch(`/api/subscription`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            userid: user.id,
-                            status: 'active',
-                            duration: months,
-                        }),
-                    });
+                try {
+                    const subscriptionResponse = await fetch(`/api/subscription?userid=${user.id}`);
+                    const subscriptionData = await subscriptionResponse.json();
+                    console.log("Subscription data: ", subscriptionData.subscription.status);
+                    if (subscriptionResponse.ok && subscriptionData.subscription) {
+                        // User has a subscription
+                        if (subscriptionData.subscription.status === 'inactive') {
+                            // Update existing subscription
+                            const updateResponse = await fetch(`/api/subscription`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    userid: user.id,
+                                    status: 'active',
+                                    duration: months,
+                                }),
+                            });
 
-                    if (newSubscriber.ok) {
-                        console.log("New subscriber added successfully");
+                            if (updateResponse.ok) {
+                                console.log("Subscription reactivated and updated successfully");
+                            } else {
+                                console.log("Failed to update inactive subscription");
+                            }
+                        } else {
+                            console.log("User already has an active subscription");
+                        }
                     } else {
-                        console.log("Error while adding new subscriber");
+                        // No subscription found; create new
+                        const newSubscriber = await fetch(`/api/subscription`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                userid: user.id,
+                                status: 'active',
+                                duration: months,
+                            }),
+                        });
+
+                        if (newSubscriber.ok) {
+                            console.log("New subscriber added successfully");
+                        } else {
+                            console.log("Error while adding new subscriber");
+                        }
                     }
+                } catch (error) {
+                    console.error("Subscription check/update error:", error);
                 }
 
                 console.log('payment successfull')
