@@ -1,5 +1,5 @@
 'use client'
-import { UserButton, useUser } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
 import Subscription from "@/components/Subscription/Subscription"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"

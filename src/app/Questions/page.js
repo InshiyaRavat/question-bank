@@ -1,11 +1,9 @@
 "use client";
 import Question from "@/components/Question/Question";
-import { useRouter } from "next/navigation";
 import React, { useState, useEffect, Suspense } from "react";
 
 export default function Questions() {
-  const router = useRouter();
-  const [type, setType] = useState();
+  const [, setType] = useState();
   useEffect(() => {
     const queryType = new URLSearchParams(window.location.search).get("type");
     if (queryType) {
@@ -13,9 +11,6 @@ export default function Questions() {
     }
   }, []);
 
-  const handleSubmit = (e) => {
-    router.push("/Result");
-  };
   return (
     <div className="flex flex-col bg-gray-50 text-gray-800">
       {/* Main Content Section */}

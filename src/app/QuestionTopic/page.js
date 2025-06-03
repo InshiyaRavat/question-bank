@@ -5,14 +5,15 @@ import React, { useContext } from "react";
 import { AttemptedQuestionContext } from "@/context/AttemptedQuestionContext";
 import Mode from "@/components/TopicList/Mode";
 import { UserButton } from "@clerk/nextjs";
+import { THEME } from "@/theme";
 
 export default function QuestionTopic() {
   const { totalQuestions } = useContext(AttemptedQuestionContext);
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-[#E9D8A6] text-[#001219]">
+    <div className={`flex flex-col lg:flex-row h-screen bg-[${THEME.secondary_1}] text-[${THEME.primary_4}]`}>
       {/* Sidebar Header - Desktop (Fixed) */}
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-1/4 bg-[#001219] text-white shadow-xl z-10">
+      <div className={`hidden lg:block fixed top-0 left-0 h-full w-1/4 bg-[${THEME.primary_4}] text-white shadow-xl z-10`}>
         <Header />
       </div>
 
@@ -25,10 +26,10 @@ export default function QuestionTopic() {
 
         {/* Scrollable content only */}
         <div className="flex-1 p-6 sm:p-8 overflow-y-auto bg-[#fefcf3] shadow-inner">
-          <div className="bg-[#94D2BD] p-4 flex justify-between items-center rounded-xl shadow text-center">
-            <h2 className="text-xl sm:text-2xl font-bold text-[#001219]">
+          <div className={`bg-[${THEME.primary_1}] p-4 flex justify-between items-center rounded-xl shadow text-center`}>
+            <h2 className={`text-xl sm:text-2xl font-bold text-[${THEME.primary_4}]`}>
               🎯 Total Questions Attempted:
-              <span className="text-[#005F73] ml-2">{totalQuestions}</span>
+              <span className={`text-[${THEME.primary_3}] ml-2`}>{totalQuestions}</span>
             </h2>
             <UserButton />
           </div>

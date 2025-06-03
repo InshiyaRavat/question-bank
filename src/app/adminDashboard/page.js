@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import AdminQuestionList from "@/components/Admin-side/AdminQuestionList";
+import { THEME } from "@/theme";
 
 export default function AdminDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -16,9 +17,9 @@ export default function AdminDashboard() {
   }, [isLoaded, user, isSignedIn]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#E9D8A6]">
+    <div className={`min-h-screen flex flex-col bg-[${THEME.secondary_1}]`}>
       {/* HEADER */}
-      <header className="flex flex-wrap items-center justify-between p-4 bg-[#005F73] shadow-md gap-4">
+      <header className={`flex flex-wrap items-center justify-between p-4 bg-[${THEME.primary_3}] shadow-md gap-4`}>
         <div className="flex items-center gap-3">
           {/* Sidebar Toggle for Mobile */}
           <button
@@ -45,12 +46,12 @@ export default function AdminDashboard() {
           <input
             type="search"
             placeholder="Search..."
-            className="w-full px-4 py-2 text-[#001219] bg-white border border-[#94D2BD] rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0A9396]"
+            className={`w-full px-4 py-2 text-[${THEME.primary_4}] bg-white border border-[${THEME.primary_1}] rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[${THEME.primary_2}]`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <svg
-            className="absolute right-3 top-3 w-5 h-5 text-[#005F73]"
+            className={`absolute right-3 top-3 w-5 h-5 text-[${THEME.primary_3}]`}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -71,7 +72,7 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row flex-1">
         {/* SIDEBAR */}
         <aside
-          className={`fixed z-50 inset-y-0 left-0 w-64 bg-[#001219] text-white p-6 transition-transform transform ${
+          className={`fixed z-50 inset-y-0 left-0 w-64 bg-[${THEME.primary_4}] text-white p-6 transition-transform transform ${
             sidebarOpen ? "translate-x-0" : "-translate-x-64"
           } md:translate-x-0 md:relative md:z-auto shadow-lg`}
         >
@@ -96,7 +97,7 @@ export default function AdminDashboard() {
           <nav className="mt-6 space-y-4">
             <a
               href="#"
-              className="block px-4 py-2 rounded-md bg-[#0A9396] text-white hover:bg-[#94D2BD] hover:text-[#001219] transition"
+              className={`block px-4 py-2 rounded-md bg-[${THEME.primary_2}] text-white hover:bg-[${THEME.primary_1}] hover:text-[${THEME.primary_4}] transition`}
             >
               Question Dashboard
             </a>
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
         </aside>
 
         {/* MAIN CONTENT AREA */}
-        <main className="flex-1 p-4 sm:p-6 bg-[#FAF3E0]">
+        <main className={`flex-1 p-4 sm:p-6 bg-[${THEME.light_search}]`}>
           <AdminQuestionList searchTerm={searchTerm} />
         </main>
       </div>
