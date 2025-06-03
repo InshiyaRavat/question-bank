@@ -10,6 +10,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { THEME } from "@/theme";
 
 const Header = () => {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -18,7 +19,6 @@ const Header = () => {
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      console.log("User loaded successfully");
     }
   }, [isLoaded, isSignedIn]);
 
@@ -33,10 +33,10 @@ const Header = () => {
         break;
       case "upgrade":
         if (subscription.duration === 12)
-          return alert("Already at maximum plan.");
+          return toast.warn("Already at maximum plan.");
         const expiresRaw = subscription.subscribedAt;
         if (!expiresRaw || isNaN(new Date(expiresRaw))) {
-          alert("Invalid expiration date in subscription.");
+          toast.error("Invalid expiration date in subscription.");
           return;
         }
         const upgraded = new Date(expiresRaw);
@@ -49,11 +49,11 @@ const Header = () => {
             subscribedAt: upgraded.toISOString(),
           }),
         });
-        alert("Subscription upgraded!");
+        toast.success("Subscription upgraded!");
         break;
       case "downgrade":
         if (subscription.duration === 6)
-          return alert("Already at minimum plan.");
+          return toast.warn("Already at minimum plan.");
         const downgraded = new Date(subscription.subscribedAt);
         downgraded.setMonth(downgraded.getMonth() - 6);
         await fetch(`api/subscription/${subscription.id}`, {
@@ -64,17 +64,17 @@ const Header = () => {
             subscribedAt: downgraded.toISOString(),
           }),
         });
-        alert("Subscription downgraded.");
+        toast.success("Subscription downgraded.");
         break;
       case "cancellation":
         if (subscription.status === "inactive")
-          return alert("Already canceled.");
+          return toast.warn("Already canceled.");
         await fetch(`api/subscription/${subscription.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "inactive" }),
         });
-        alert("Subscription canceled.");
+        toast.success("Subscription canceled.");
         router("/");
         break;
       default:
@@ -85,9 +85,9 @@ const Header = () => {
   return (
     <div className="h-fit lg:h-screen w-full flex">
       {/* Sidebar (Desktop) */}
-      <div className="w-full hidden lg:flex flex-col justify-between bg-[#001219] p-6 rounded-lg shadow-xl text-white">
+      <div className={`w-full hidden lg:flex flex-col justify-between bg-[${THEME.primary_4}] p-6 rounded-lg shadow-xl text-white`}>
         <div>
-          <h2 className="text-3xl font-bold text-[#E9D8A6] mb-6">
+          <h2 className={`text-3xl font-bold text-[${THEME.secondary_1}] mb-6`}>
             📚 Question Bank
           </h2>
           <nav className="flex flex-col gap-4">
@@ -96,28 +96,28 @@ const Header = () => {
               icon={<RefreshCw />}
               onClick={handleClick}
               text="Renew Subscription"
-              color="bg-[#0A9396]"
+              color={`bg-[${THEME.primary_2}]`}
             />
             <SidebarButton
               name="upgrade"
               icon={<ArrowUpRight />}
               onClick={handleClick}
               text="Upgrade Plan"
-              color="bg-[#EE9B00]"
+              color={`bg-[${THEME.secondary_2}]`}
             />
             <SidebarButton
               name="downgrade"
               icon={<ArrowDownLeft />}
               onClick={handleClick}
               text="Downgrade Plan"
-              color="bg-[#94D2BD] text-[#001219]"
+              color={`bg-[${THEME.primary_1}] text-[${THEME.primary_4}]`}
             />
             <SidebarButton
               name="cancellation"
               icon={<XCircle />}
               onClick={handleClick}
               text="Cancel Subscription"
-              color="bg-[#9B2226]"
+              color={`bg-[${THEME.secondary_6}]`}
             />
           </nav>
         </div>
@@ -125,49 +125,49 @@ const Header = () => {
 
       {/* Mobile View */}
       <div className="flex flex-col lg:hidden w-full">
-        <div className="w-full p-4 bg-[#001219] shadow flex items-center justify-between text-[#E9D8A6]">
+        <div className={`w-full p-4 bg-[${THEME.primary_4}] shadow flex items-center justify-between text-[${THEME.secondary_1}]`}>
           <h2 className="text-2xl font-bold">
             <span className="inline">📚</span>
             <span className="inline max-[399px]:hidden"> Question Bank</span>
           </h2>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="text-[#E9D8A6] p-2 rounded-md hover:bg-[#005F73]"
+            className={`text-[${THEME.secondary_1}] p-2 rounded-md hover:bg-[${THEME.primary_3}]`}
           >
             {menuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
 
         {menuOpen && (
-          <div className="w-full px-4 py-6 bg-gradient-to-b from-[#E9D8A6] to-[#FFF] rounded-b-xl">
+          <div className={`w-full px-4 py-6 bg-gradient-to-b from-[${THEME.secondary_1}] to-[#FFF] rounded-b-xl`}>
             <div className="flex flex-col space-y-4">
               <SidebarButton
                 name="renewal"
                 icon={<RefreshCw />}
                 onClick={handleClick}
                 text="Renew Subscription"
-                color="bg-[#0A9396]"
+                color={`bg-[${THEME.primary_2}]`}
               />
               <SidebarButton
                 name="upgrade"
                 icon={<ArrowUpRight />}
                 onClick={handleClick}
                 text="Upgrade Plan"
-                color="bg-[#EE9B00]"
+                color={`bg-[${THEME.secondary_2}]`}
               />
               <SidebarButton
                 name="downgrade"
                 icon={<ArrowDownLeft />}
                 onClick={handleClick}
                 text="Downgrade Plan"
-                color="bg-[#94D2BD] text-[#001219]"
+                color={`bg-[${THEME.primary_1}] text-[${THEME.primary_4}]`}
               />
               <SidebarButton
                 name="cancellation"
                 icon={<XCircle />}
                 onClick={handleClick}
                 text="Cancel Subscription"
-                color="bg-[#9B2226]"
+                color={`bg-[${THEME.secondary_6}]`}
               />
               <div className="pt-4 flex justify-center">
                 <UserButton />
