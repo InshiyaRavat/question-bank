@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { toast, ToastContainer } from "react-toastify";
+import { THEME } from "@/theme";
 
 const AdminQuestionList = ({ searchTerm }) => {
   const [questionList, setQuestionList] = useState([]);
@@ -17,7 +19,7 @@ const AdminQuestionList = ({ searchTerm }) => {
     fetch(`/api/question?userId=${user.id}`)
       .then((res) => res.json())
       .then((data) => setQuestionList(data))
-      .catch((err) => console.error("Error fetching questions:", err));
+      .catch((err) => toast.error("Failed to fetch questions: " + err.message));
   }, [isLoaded, isSignedIn, user]);
 
   const handleDeleteClick = (question) => {
@@ -30,10 +32,9 @@ const AdminQuestionList = ({ searchTerm }) => {
       const res = await fetch(`/api/question/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       setQuestionList((prev) => prev.filter((q) => q.id !== id));
-      alert("Question deleted successfully.");
+      toast.success("Question deleted successfully!");
     } catch (err) {
-      console.error("Delete error:", err);
-      alert("Failed to delete question.");
+      toast.error("Failed to delete question: " + err.message);
     }
   };
 
@@ -84,25 +85,24 @@ const AdminQuestionList = ({ searchTerm }) => {
         prev.map((q) => (q.id === selectedQuestion.id ? updated : q))
       );
 
-      alert("Updated successfully!");
+      toast.success("Question updated successfully!");
       setEditDialog(false);
       setEditField("");
       setNewValue("");
     } catch (err) {
-      console.error("Update error:", err);
-      alert("Failed to update question.");
+      toast.error("Failed to update question: " + err.message);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 bg-[#001219] rounded-lg shadow-md text-white min-h-[80vh]">
+    <div className={`max-w-6xl mx-auto p-4 sm:p-6 bg-[${THEME.primary_4}] rounded-lg shadow-md text-white min-h-[80vh]`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#E9D8A6]">
+        <h2 className={`text-2xl sm:text-3xl font-bold text-[${THEME.secondary_1}]`}>
           Question List
         </h2>
         <button
-          className="bg-[#0A9396] hover:bg-[#94D2BD] text-white px-4 py-2 rounded-full font-semibold shadow transition w-full sm:w-auto"
+          className={`bg-[${THEME.primary_2}] hover:bg-[${THEME.primary_1}] text-white px-4 py-2 rounded-full font-semibold shadow transition w-full sm:w-auto`}
           onClick={handleAddQuestion}
         >
           ➕ Add Question
@@ -118,19 +118,19 @@ const AdminQuestionList = ({ searchTerm }) => {
           .map((q, index) => (
             <div
               key={index}
-              className="bg-[#005F73] p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center"
+              className={`bg-[${THEME.primary_3}] p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center`}
             >
               <p className="break-words w-full sm:w-auto">{q.questionText}</p>
               <div className="flex gap-4 self-end sm:self-auto">
                 <button
                   onClick={() => handleEdit(q)}
-                  className="text-[#E9D8A6] hover:text-[#CA6702] text-lg"
+                  className={`text-[${THEME.secondary_1}] hover:text-[${THEME.secondary_3}] text-lg`}
                 >
                   ✏️
                 </button>
                 <button
                   onClick={() => handleDeleteClick(q)}
-                  className="text-[#EE9B00] hover:text-[#9B2226] text-lg"
+                  className={`text-[${THEME.secondary_2}] hover:text-[${THEME.secondary_6}] text-lg`}
                 >
                   🗑️
                 </button>
@@ -149,13 +149,13 @@ const AdminQuestionList = ({ searchTerm }) => {
             <div className="grid gap-3">
               <button
                 onClick={() => handleFieldEdit("questionText")}
-                className="bg-[#0A9396] text-white px-4 py-2 rounded hover:bg-[#005F73]"
+                className={`bg-[${THEME.primary_2}] text-white px-4 py-2 rounded hover:bg-[${THEME.primary_3}]`}
               >
                 Edit Question Text
               </button>
               <button
                 onClick={() => handleFieldEdit("correctOptionIdx")}
-                className="bg-[#94D2BD] text-black px-4 py-2 rounded hover:bg-[#E9D8A6]"
+                className={`bg-[${THEME.primary_1}] text-black px-4 py-2 rounded hover:bg-[${THEME.secondary_1}]`}
               >
                 Edit Correct Answer Index
               </button>
@@ -163,7 +163,7 @@ const AdminQuestionList = ({ searchTerm }) => {
                 <button
                   key={idx}
                   onClick={() => handleFieldEdit(`option-${idx}`)}
-                  className="bg-[#E9D8A6] text-black px-4 py-2 rounded hover:bg-[#EE9B00] text-left"
+                  className={`bg-[${THEME.secondary_1}] text-black px-4 py-2 rounded hover:bg-[${THEME.secondary_2}] text-left`}
                 >
                   Edit Option {idx + 1}: {opt}
                 </button>
@@ -182,13 +182,13 @@ const AdminQuestionList = ({ searchTerm }) => {
                 <div className="flex gap-3 mt-4 flex-col sm:flex-row">
                   <button
                     onClick={updateQuestion}
-                    className="flex-1 bg-[#0A9396] text-white px-4 py-2 rounded hover:bg-[#005F73]"
+                    className={`flex-1 bg-[${THEME.primary_2}] text-white px-4 py-2 rounded hover:bg-[${THEME.primary_3}]`}
                   >
                     Update
                   </button>
                   <button
                     onClick={() => setEditDialog(false)}
-                    className="flex-1 bg-[#9B2226] text-white px-4 py-2 rounded hover:bg-[#AE2012]"
+                    className={`flex-1 bg-[${THEME.secondary_6}] text-white px-4 py-2 rounded hover:bg-[${THEME.secondary_5}]`}
                   >
                     Cancel
                   </button>
@@ -215,7 +215,7 @@ const AdminQuestionList = ({ searchTerm }) => {
               </button>
               <button
                 onClick={() => confirmDelete(selectedQuestion.id)}
-                className="px-4 py-2 rounded bg-[#AE2012] text-white hover:bg-[#9B2226]"
+                className={`px-4 py-2 rounded bg-[${THEME.secondary_5}] text-white hover:bg-[${THEME.secondary_6}]`}
               >
                 Yes, Delete
               </button>
@@ -223,6 +223,7 @@ const AdminQuestionList = ({ searchTerm }) => {
           </div>
         </div>
       )}
+      <ToastContainer/>
     </div>
   );
 };

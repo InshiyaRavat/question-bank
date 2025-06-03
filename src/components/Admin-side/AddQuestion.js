@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import pdfToText from "react-pdftotext";
+import { THEME } from "@/theme";
+import { toast, ToastContainer } from "react-toastify";
 
 const AddQuestion = () => {
   const [topics, setTopics] = useState([]);
@@ -15,7 +17,7 @@ const AddQuestion = () => {
     fetch("/api/topics")
       .then((res) => res.json())
       .then((data) => setTopics(data))
-      .catch((err) => console.error("Error fetching topics:", err));
+      .catch((err) => toast.error("Failed to fetch topics: " + err.message));
   }, []);
 
   const handleOptionChange = (index, value) => {
@@ -26,13 +28,13 @@ const AddQuestion = () => {
 
   const handleAddQuestion = async () => {
     if (!question || options.some((opt) => opt === "") || !correctAnswer || !selectedTopic) {
-      alert("Please fill all fields.");
+      toast.error("Please fill in all fields.");
       return;
     }
 
     const answerIndex = options.findIndex((opt) => opt === correctAnswer);
     if (answerIndex === -1) {
-      alert("Correct answer must match one of the options.");
+      toast.error("Correct answer must match one of the options.");
       return;
     }
 
@@ -54,15 +56,14 @@ const AddQuestion = () => {
 
       if (!response.ok) throw new Error("Failed to add question");
 
-      alert("Question added successfully!");
+      toast.success("Question added successfully!");
       setQuestion("");
       setOptions(["", "", "", ""]);
       setCorrectAnswer("");
       setSelectedTopic("");
       router.push("/adminDashboard");
     } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to add question. Please try again.");
+      toast.error("Failed to add question: " + error.message);
     }
   };
 
@@ -80,10 +81,9 @@ const AddQuestion = () => {
           });
         })
       );
-      alert("Bulk questions added successfully!");
+      toast.success("Questions extracted and added successfully!");
     } catch (error) {
-      console.error("Failed to extract text from PDF", error);
-      alert("Failed to process PDF.");
+      toast.error("Failed to extract text from PDF", error.message);
     }
   };
 
@@ -113,7 +113,7 @@ const AddQuestion = () => {
           });
         }
       } catch (err) {
-        console.warn("Skipping invalid question block:", block);
+        toast.error('Error parsing question block: ' + err.message);
       }
     });
 
@@ -121,27 +121,27 @@ const AddQuestion = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#E9D8A6] p-4 sm:p-8 flex flex-col items-center">
+    <div className={`min-h-screen bg-[${THEME.secondary_1}] p-4 sm:p-8 flex flex-col items-center`}>
       <div className="w-full max-w-3xl bg-white rounded-xl shadow-md p-6 sm:p-10 space-y-6">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#005F73] text-center">Add New Question</h2>
+        <h2 className={`text-2xl sm:text-3xl font-bold text-[${THEME.primary_3}] text-center`}>Add New Question</h2>
 
         {/* PDF Upload */}
         <div>
-          <label className="block text-[#001219] font-semibold mb-2">Upload PDF for Bulk Questions</label>
+          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Upload PDF for Bulk Questions</label>
           <input
             type="file"
             accept="application/pdf"
             onChange={extractText}
-            className="block w-full text-sm text-gray-700 border border-[#94D2BD] rounded-md p-2 bg-[#f8f8f8]"
+            className={`block w-full text-sm text-gray-700 border border-[${THEME.primary_1}] rounded-md p-2 bg-[#f8f8f8]`}
           />
         </div>
 
         {/* Question Input */}
         <div>
-          <label className="block text-[#001219] font-semibold mb-2">Question</label>
+          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Question</label>
           <textarea
             rows="3"
-            className="w-full border placeholder-black border-[#94D2BD] rounded-md p-3 focus:ring-2 focus:ring-[#0A9396]"
+            className={`w-full border placeholder-black border-[${THEME.primary_1}] rounded-md p-3 focus:ring-2 focus:ring-[${THEME.primary_2}]`}
             placeholder="Enter your question here..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -150,13 +150,13 @@ const AddQuestion = () => {
 
         {/* Options Input */}
         <div>
-          <label className="block text-[#001219] font-semibold mb-2">Options</label>
+          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Options</label>
           <div className="space-y-3">
             {options.map((opt, index) => (
               <input
                 key={index}
                 type="text"
-                className="w-full placeholder-black border border-[#94D2BD] p-3 rounded-md focus:ring-2 focus:ring-[#0A9396]"
+                className={`w-full placeholder-black border border-[${THEME.primary_1}] p-3 rounded-md focus:ring-2 focus:ring-[${THEME.primary_2}]`}
                 placeholder={`Option ${index + 1}`}
                 value={opt}
                 onChange={(e) => handleOptionChange(index, e.target.value)}
@@ -167,9 +167,9 @@ const AddQuestion = () => {
 
         {/* Correct Answer */}
         <div>
-          <label className="block text-[#001219] font-semibold mb-2">Correct Answer</label>
+          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Correct Answer</label>
           <select
-            className="w-full border border-[#94D2BD] p-3 rounded-md text-gray-700 focus:ring-2 focus:ring-[#0A9396]"
+            className={`w-full border border-[${THEME.primary_1}] p-3 rounded-md text-gray-700 focus:ring-2 focus:ring-[${THEME.primary_2}]`}
             value={correctAnswer}
             onChange={(e) => setCorrectAnswer(e.target.value)}
           >
@@ -182,9 +182,9 @@ const AddQuestion = () => {
 
         {/* Topic Dropdown */}
         <div>
-          <label className="block text-[#001219] font-semibold mb-2">Select Topic</label>
+          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Select Topic</label>
           <select
-            className="w-full border border-[#94D2BD] p-3 rounded-md text-gray-700 focus:ring-2 focus:ring-[#0A9396]"
+            className={`w-full border border-[${THEME.primary_1}] p-3 rounded-md text-gray-700 focus:ring-2 focus:ring-[${THEME.primary_2}]`}
             value={selectedTopic}
             onChange={(e) => setSelectedTopic(e.target.value)}
           >
@@ -197,12 +197,13 @@ const AddQuestion = () => {
 
         {/* Submit Button */}
         <button
-          className="w-full bg-[#005F73] hover:bg-[#0A9396] text-white py-3 rounded-md font-semibold text-lg transition"
+          className={`w-full bg-[${THEME.primary_3}] hover:bg-[${THEME.primary_2}] text-white py-3 rounded-md font-semibold text-lg transition`}
           onClick={handleAddQuestion}
         >
           Add Question
         </button>
       </div>
+      <ToastContainer />
     </div>
   );
 };
