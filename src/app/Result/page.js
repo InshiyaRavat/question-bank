@@ -41,7 +41,7 @@ export default function Result() {
           <p className={`text-lg text-[${THEME.primary_4}] font-medium`}>Total Score</p>
 
           <div className="w-full flex justify-around mt-4">
-            <div className={`bg-[${THME>primary_1}] text-[${THEME.primary_4}] rounded-xl px-4 py-2 shadow font-semibold`}>
+            <div className={`bg-[${THEME.primary_1}] text-[${THEME.primary_4}] rounded-xl px-4 py-2 shadow font-semibold`}>
               ✅ Correct: {correct}
             </div>
             <div className={`bg-[${THEME.secondary_2}] text-[${THEME.primary_4}] rounded-xl px-4 py-2 shadow font-semibold`}>
