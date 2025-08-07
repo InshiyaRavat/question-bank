@@ -15,7 +15,7 @@ export default function Home() {
       try {
         console.log(user.username);
         if (user.username === "admin") {
-          router.push("/adminDashboard");
+          router.push("/admin-dashboard");
         }
       } catch (e) {
         console.log(e);
@@ -37,7 +37,7 @@ export default function Home() {
         console.log("subscription data: ", data.subscription);
         if (data.subscription) {
           if (data.subscription.status == "active") {
-            router.push("/QuestionTopic");
+            router.push("/question-topic");
           }
         } else {
           console.log("user has not subscribed");
@@ -47,12 +47,12 @@ export default function Home() {
       } catch (error) {
         console.log("error occured while fetching subscription status: ", error);
       }
-    };            
+    };
 
     getSubscriptionStatus();
   }, [isLoaded, isSignedIn, router, user]);
 
   return (
-      <Subscription />
+    <Subscription />
   );
 }

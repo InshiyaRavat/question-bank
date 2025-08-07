@@ -61,7 +61,7 @@ const AddQuestion = () => {
       setOptions(["", "", "", ""]);
       setCorrectAnswer("");
       setSelectedTopic("");
-      router.push("/adminDashboard");
+      router.push("/admin-dashboard");
     } catch (error) {
       toast.error("Failed to add question: " + error.message);
     }

@@ -94,7 +94,7 @@ const PayForm = () => {
                 else {
                     console.log("email sent successfullly! ")
                 }
-                router.push('/QuestionTopic')
+                router.push('/question-topic')
             }
         } catch (error) {
             console.error('Error during payment submission:', error)

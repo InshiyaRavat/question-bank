@@ -10,7 +10,7 @@ const CountdownTimer = ({ initialTimer, ...props }) => {
       localStorage.setItem("correctQuestions", props.correctQuestions);
       localStorage.setItem("incorrectQuestions", props.incorrectQuestions);
       router.push(
-        `/Result?score=${props.score}&incorrectCount=${props.incorrectCount}&correctCount=${props.correctCount}`
+        `/result?score=${props.score}&incorrectCount=${props.incorrectCount}&correctCount=${props.correctCount}`
       );
     }
 
@@ -32,11 +32,10 @@ const CountdownTimer = ({ initialTimer, ...props }) => {
   return (
     <div
       className={`border rounded-lg p-3 shadow-sm font-semibold text-lg tracking-wide transition-all duration-300
-      ${
-        timeLeft < 10
+      ${timeLeft < 10
           ? "border-[#AE2012] text-[#AE2012] bg-[#E9D8A6]"
           : "border-[#0A9396] text-[#005F73] bg-[#94D2BD]"
-      }`}
+        }`}
     >
       Time left: {formatTime(timeLeft)}
     </div>

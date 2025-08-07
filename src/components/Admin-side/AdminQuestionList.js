@@ -44,7 +44,7 @@ const AdminQuestionList = ({ searchTerm }) => {
   };
 
   const handleAddQuestion = () => {
-    router.push("/AddQuestion");
+    router.push("/add-question");
   };
 
   const handleEdit = (question) => {
@@ -223,7 +223,7 @@ const AdminQuestionList = ({ searchTerm }) => {
           </div>
         </div>
       )}
-      <ToastContainer/>
+      <ToastContainer />
     </div>
   );
 };

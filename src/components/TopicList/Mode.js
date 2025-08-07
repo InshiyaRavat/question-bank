@@ -22,10 +22,10 @@ const Mode = () => {
 
   const handleClick = () => {
     if (isTest) {
-      router.push(`/Questions?type=${isTimed ? "timed" : "untimed"}`);
+      router.push(`/questions?type=${isTimed ? "timed" : "untimed"}`);
     } else {
       const stopwatchParam = isStopwatchEnabled ? "on" : "off";
-      router.push(`/Questions?type=practice&stopwatch=${stopwatchParam}`);
+      router.push(`/questions?type=practice&stopwatch=${stopwatchParam}`);
     }
   };
 
@@ -44,11 +44,10 @@ const Mode = () => {
               className="hidden"
             />
             <span
-              className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all ${
-                isTest === (index === 1)
+              className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all ${isTest === (index === 1)
                   ? "bg-[#0A9396] text-white"
                   : "bg-[#E9D8A6] text-[#001219] hover:bg-[#CA6702]/90"
-              }`}
+                }`}
             >
               {mode}
             </span>
@@ -82,11 +81,10 @@ const Mode = () => {
                 className="hidden"
               />
               <span
-                className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all ${
-                  isTimed === (index === 0)
+                className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all ${isTimed === (index === 0)
                     ? "bg-[#EE9B00] text-white"
                     : "bg-[#E9D8A6] text-[#001219] hover:bg-[#CA6702]/90"
-                }`}
+                  }`}
               >
                 {type}
               </span>
