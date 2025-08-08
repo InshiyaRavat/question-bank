@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { toast, ToastContainer } from "react-toastify";
 import { THEME } from "@/theme";
+import { DeleteIcon, Pencil, Plus, Trash2 } from "lucide-react";
 
 const AdminQuestionList = ({ searchTerm }) => {
   const [questionList, setQuestionList] = useState([]);
@@ -44,7 +45,7 @@ const AdminQuestionList = ({ searchTerm }) => {
   };
 
   const handleAddQuestion = () => {
-    router.push("/AddQuestion");
+    router.push("/add-question");
   };
 
   const handleEdit = (question) => {
@@ -68,8 +69,7 @@ const AdminQuestionList = ({ searchTerm }) => {
       updated.options = [...updated.options];
       updated.options[index] = newValue;
     } else {
-      updated[editField] =
-        editField === "correctOptionIdx" ? parseInt(newValue) : newValue;
+      updated[editField] = editField === "correctOptionIdx" ? parseInt(newValue) : newValue;
     }
 
     try {
@@ -81,9 +81,7 @@ const AdminQuestionList = ({ searchTerm }) => {
 
       if (!res.ok) throw new Error("Update failed");
 
-      setQuestionList((prev) =>
-        prev.map((q) => (q.id === selectedQuestion.id ? updated : q))
-      );
+      setQuestionList((prev) => prev.map((q) => (q.id === selectedQuestion.id ? updated : q)));
 
       toast.success("Question updated successfully!");
       setEditDialog(false);
@@ -95,44 +93,55 @@ const AdminQuestionList = ({ searchTerm }) => {
   };
 
   return (
-    <div className={`max-w-6xl mx-auto p-4 sm:p-6 bg-[${THEME.primary_4}] rounded-lg shadow-md text-white min-h-[80vh]`}>
+    <div
+      className="max-w-6xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md min-h-[80vh]"
+      style={{ color: THEME.neutral900 }}
+    >
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className={`text-2xl sm:text-3xl font-bold text-[${THEME.secondary_1}]`}>
+        <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: THEME.neutral900 }}>
           Question List
         </h2>
         <button
-          className={`bg-[${THEME.primary_2}] hover:bg-[${THEME.primary_1}] text-white px-4 py-2 rounded-full font-semibold shadow transition w-full sm:w-auto`}
           onClick={handleAddQuestion}
+          style={{
+            backgroundColor: THEME.primary,
+            color: "white",
+          }}
+          className="hover:opacity-90 px-4 py-2 rounded-full font-semibold shadow transition w-full sm:w-auto cursor-pointer flex items-center gap-2"
         >
-          ➕ Add Question
+          <Plus />
+          Add Question
         </button>
       </div>
 
-      {/* List */}
+      {/* Question List */}
       <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-2">
         {questionList
-          .filter((q) =>
-            q.questionText.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+          .filter((q) => q.questionText.toLowerCase().includes(searchTerm.toLowerCase()))
           .map((q, index) => (
             <div
               key={index}
-              className={`bg-[${THEME.primary_3}] p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center`}
+              className="p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center"
+              style={{ backgroundColor: THEME.neutral50 }}
             >
-              <p className="break-words w-full sm:w-auto">{q.questionText}</p>
+              <p style={{ color: THEME.textPrimary }} className="break-words w-full sm:w-auto">
+                {q.questionText}
+              </p>
               <div className="flex gap-4 self-end sm:self-auto">
                 <button
                   onClick={() => handleEdit(q)}
-                  className={`text-[${THEME.secondary_1}] hover:text-[${THEME.secondary_3}] text-lg`}
+                  style={{ color: THEME.primary }}
+                  className="hover:opacity-80 text-lg cursor-pointer"
                 >
-                  ✏️
+                  <Pencil />
                 </button>
                 <button
                   onClick={() => handleDeleteClick(q)}
-                  className={`text-[${THEME.secondary_2}] hover:text-[${THEME.secondary_6}] text-lg`}
+                  style={{ color: THEME.error }}
+                  className="hover:opacity-80 text-lg cursor-pointer"
                 >
-                  🗑️
+                  <Trash2 />
                 </button>
               </div>
             </div>
@@ -141,21 +150,21 @@ const AdminQuestionList = ({ searchTerm }) => {
 
       {/* Edit Dialog */}
       {editDialog && selectedQuestion && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 p-4 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-blue-200 bg-opacity-70 p-4 z-50">
           <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-lg text-black">
-            <h3 className="text-xl font-bold mb-4 text-center">
-              Edit Question
-            </h3>
+            <h3 className="text-xl font-bold mb-4 text-center">Edit Question</h3>
             <div className="grid gap-3">
               <button
                 onClick={() => handleFieldEdit("questionText")}
-                className={`bg-[${THEME.primary_2}] text-white px-4 py-2 rounded hover:bg-[${THEME.primary_3}]`}
+                style={{ color: THEME.neutral500 }}
+                className="text-white px-4 py-2 rounded hover:opacity-90"
               >
                 Edit Question Text
               </button>
               <button
                 onClick={() => handleFieldEdit("correctOptionIdx")}
-                className={`bg-[${THEME.primary_1}] text-black px-4 py-2 rounded hover:bg-[${THEME.secondary_1}]`}
+                style={{ backgroundColor: THEME.primary_1, color: "black" }}
+                className="px-4 py-2 rounded hover:opacity-90 text-red-500"
               >
                 Edit Correct Answer Index
               </button>
@@ -163,7 +172,8 @@ const AdminQuestionList = ({ searchTerm }) => {
                 <button
                   key={idx}
                   onClick={() => handleFieldEdit(`option-${idx}`)}
-                  className={`bg-[${THEME.secondary_1}] text-black px-4 py-2 rounded hover:bg-[${THEME.secondary_2}] text-left`}
+                  style={{ backgroundColor: THEME.neutral100, color: "black" }}
+                  className="px-4 py-2 rounded hover:opacity-90 text-left"
                 >
                   Edit Option {idx + 1}: {opt}
                 </button>
@@ -182,13 +192,15 @@ const AdminQuestionList = ({ searchTerm }) => {
                 <div className="flex gap-3 mt-4 flex-col sm:flex-row">
                   <button
                     onClick={updateQuestion}
-                    className={`flex-1 bg-[${THEME.primary_2}] text-white px-4 py-2 rounded hover:bg-[${THEME.primary_3}]`}
+                    style={{ backgroundColor: THEME.primary }}
+                    className="flex-1 px-4 py-2 rounded hover:opacity-90 text-white cursor-pointer"
                   >
                     Update
                   </button>
                   <button
                     onClick={() => setEditDialog(false)}
-                    className={`flex-1 bg-[${THEME.secondary_6}] text-white px-4 py-2 rounded hover:bg-[${THEME.secondary_5}]`}
+                    style={{ backgroundColor: THEME.primary }}
+                    className="flex-1 text-white px-4 py-2 rounded hover:opacity-90 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -201,21 +213,17 @@ const AdminQuestionList = ({ searchTerm }) => {
 
       {/* Delete Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-blue-200 bg-opacity-70 z-50 p-4">
           <div className="bg-white text-black p-6 rounded-xl w-full max-w-md shadow-lg text-center">
-            <p className="mb-4 text-lg">
-              Are you sure you want to delete this question?
-            </p>
+            <p className="mb-4 text-lg">Are you sure you want to delete this question?</p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-              >
+              <button className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400" onClick={() => setShowModal(false)}>
                 Cancel
               </button>
               <button
                 onClick={() => confirmDelete(selectedQuestion.id)}
-                className={`px-4 py-2 rounded bg-[${THEME.secondary_5}] text-white hover:bg-[${THEME.secondary_6}]`}
+                style={{ backgroundColor: THEME.primary }}
+                className="px-4 py-2 text-white rounded hover:opacity-90"
               >
                 Yes, Delete
               </button>
@@ -223,7 +231,7 @@ const AdminQuestionList = ({ searchTerm }) => {
           </div>
         </div>
       )}
-      <ToastContainer/>
+      <ToastContainer />
     </div>
   );
 };

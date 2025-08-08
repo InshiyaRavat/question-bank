@@ -1,8 +1,8 @@
 "use client";
 import React, { useContext, useEffect } from "react";
-import "../../Style/subscription.css";
 import { useRouter } from "next/navigation";
 import { PlanContext } from "@/context/PlanContext";
+import { THEME } from '@/theme'
 
 const Subscription = () => {
   const { plan, setPlan } = useContext(PlanContext);
@@ -17,32 +17,37 @@ const Subscription = () => {
   useEffect(() => {
     if (plan !== null) {
       console.log("plan set to: ", plan);
-      router.push("/PaymentForm");
+      router.push("/payment-form");
     }
   }, [plan]);
   return (
-    <div className="min-h-screen bg-[#001219] text-white p-8">
+    <div className="min-h-screen bg-white text-black p-8">
       <div className="flex flex-col lg:flex-row items-center justify-center gap-10">
         {/* 6-month plan */}
-        <div className="bg-[#005F73] rounded-2xl shadow-lg p-8 w-full max-w-md transform hover:scale-105 transition duration-300">
+        <div className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300"
+          style={{ background: THEME.surface }}>
           <div className="text-center">
-            <span className="text-4xl font-bold text-[#E9D8A6]">
+            <span className="text-4xl font-bold"
+              style={{ color: THEME.primary }}>
               £10{" "}
-              <small className="text-sm font-medium text-white">/ month</small>
+              <small className="text-sm font-medium">/ month</small>
             </span>
-            <p className="text-2xl mt-2 font-semibold text-[#94D2BD]">
+            <p className="text-2xl mt-2 font-semibold "
+              style={{ color: THEME.textSecondary }}>
               6 Months
             </p>
-            <p className="text-sm mt-4 text-white">
+            <p className="text-sm mt-4 "
+              style={{ color: THEME.neutral700 }}>
               Subscribe to unlock full access to{" "}
-              <strong className="text-[#EE9B00]">
+              <strong className="">
                 study materials, tests, performance tracking, and peer
                 discussions
               </strong>
               —everything you need to excel in your learning journey!
             </p>
           </div>
-          <ul className="mt-6 text-sm text-white space-y-2 list-disc list-inside">
+          <ul className="mt-6 text-sm space-y-2 list-disc list-inside"
+            style={{ color: THEME.neutral900 }}>
             <li>Test mode</li>
             <li>Practice mode</li>
             <li>Performance tracking</li>
@@ -51,7 +56,7 @@ const Subscription = () => {
           </ul>
           <div className="text-center mt-6">
             <button
-              className="bg-[#EE9B00] hover:bg-[#CA6702] text-white font-bold py-2 px-6 rounded-full shadow-lg transition"
+              className="text-blue-900 font-bold py-2 px-6 rounded-full shadow-lg transition hover:bg-blue-700 hover:text-white"
               onClick={() =>
                 handleClick({ target: { dataset: { value: 10 } } })
               }
@@ -62,25 +67,29 @@ const Subscription = () => {
         </div>
 
         {/* 12-month plan */}
-        <div className="bg-[#0A9396] rounded-2xl shadow-lg p-8 w-full max-w-md transform hover:scale-105 transition duration-300">
+        <div className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300"
+          style={{ background: THEME.surface }}>
           <div className="text-center">
-            <span className="text-4xl font-bold text-[#E9D8A6]">
+            <span className="text-4xl font-bold"
+              style={{ color: THEME.primary }}>
               £20{" "}
-              <small className="text-sm font-medium text-white">/ month</small>
+              <small className="text-sm font-medium ">/ month</small>
             </span>
-            <p className="text-2xl mt-2 font-semibold text-[#94D2BD]">
+            <p className="text-2xl mt-2 font-semibold "
+              style={{ color: THEME.textSecondary }}>
               12 Months
             </p>
-            <p className="text-sm mt-4 text-white">
+            <p className="text-sm mt-4"
+              style={{ color: THEME.neutral700 }}>
               Subscribe to unlock full access to{" "}
-              <strong className="text-[#EE9B00]">
+              <strong className="">
                 study materials, tests, performance tracking, and peer
                 discussions
               </strong>
               —everything you need to excel in your learning journey!
             </p>
           </div>
-          <ul className="mt-6 text-sm text-white space-y-2 list-disc list-inside">
+          <ul className="mt-6 text-sm space-y-2 list-disc list-inside">
             <li>Test mode</li>
             <li>Practice mode</li>
             <li>Performance tracking</li>
@@ -89,7 +98,7 @@ const Subscription = () => {
           </ul>
           <div className="text-center mt-6">
             <button
-              className="bg-[#EE9B00] hover:bg-[#CA6702] text-white font-bold py-2 px-6 rounded-full shadow-lg transition"
+              className="text-blue-900 font-bold py-2 px-6 rounded-full shadow-lg transition hover:bg-blue-700 hover:text-white"
               onClick={() =>
                 handleClick({ target: { dataset: { value: 20 } } })
               }
@@ -100,7 +109,7 @@ const Subscription = () => {
         </div>
       </div>
 
-      <h3 className="mt-10 text-center text-sm text-[#94D2BD]">
+      <h3 className="mt-10 text-center text-sm">
         <strong>Note:</strong> Features are identical across plans—only the
         duration (6 or 12 months) differs.
       </h3>

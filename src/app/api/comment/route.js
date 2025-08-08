@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export async function GET() {
   const comments = await prisma.comment.findMany({
     include: { replies: true },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(comments);
 }

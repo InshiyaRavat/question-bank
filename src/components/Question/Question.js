@@ -174,7 +174,7 @@ const Question = (props) => {
     localStorage.setItem("correctQuestions", correctQuestions);
     localStorage.setItem("incorrectQuestions", incorrectQuestions);
     router.push(
-      `/Result?score=${score}&incorrectCount=${incorrectCount}&correctCount=${correctCount}`
+      `/result?score=${score}&incorrectCount=${incorrectCount}&correctCount=${correctCount}`
     );
   }
 
@@ -228,11 +228,11 @@ const Question = (props) => {
                   ? !isTestMode && isCorrectAnswer
                     ? "bg-[#94D2BD] border-[#0A9396]"
                     : !isTestMode && isIncorrect
-                    ? "bg-[#EE9B00] border-[#CA6702]"
-                    : "bg-[#E9D8A6] border-[#BB3E03]"
+                      ? "bg-[#EE9B00] border-[#CA6702]"
+                      : "bg-[#E9D8A6] border-[#BB3E03]"
                   : !isTestMode && isAnswer && hasSubmitted
-                  ? "bg-[#94D2BD] border-[#0A9396]"
-                  : "bg-white border-gray-300";
+                    ? "bg-[#94D2BD] border-[#0A9396]"
+                    : "bg-white border-gray-300";
 
                 return (
                   <label
@@ -256,9 +256,8 @@ const Question = (props) => {
 
             <div className="flex flex-wrap justify-between items-center gap-4">
               <button
-                className={`bg-[#005F73] text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105 ${
-                  selectedOption === null && "bg-opacity-50 cursor-not-allowed"
-                }`}
+                className={`bg-[#005F73] text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105 ${selectedOption === null && "bg-opacity-50 cursor-not-allowed"
+                  }`}
                 onClick={handleSubmit}
                 disabled={selectedOption === null || hasSubmitted}
               >

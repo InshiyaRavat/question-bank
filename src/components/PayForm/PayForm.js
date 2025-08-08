@@ -32,7 +32,7 @@ const PayForm = () => {
             console.log("calling api with plan =", plan)
 
             const { data } = await axios.post('/api/create-payment-intent', {
-                amount: plan,
+                amount: Number(plan),
             })
             const clientSecret = data.clientSecret
 
@@ -94,7 +94,7 @@ const PayForm = () => {
                 else {
                     console.log("email sent successfullly! ")
                 }
-                router.push('/QuestionTopic')
+                router.push('/question-topic')
             }
         } catch (error) {
             console.error('Error during payment submission:', error)

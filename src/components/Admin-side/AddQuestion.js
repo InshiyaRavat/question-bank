@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import pdfToText from "react-pdftotext";
 import { THEME } from "@/theme";
 import { toast, ToastContainer } from "react-toastify";
+import { Input } from "../ui/input";
 
 const AddQuestion = () => {
   const [topics, setTopics] = useState([]);
@@ -61,7 +62,7 @@ const AddQuestion = () => {
       setOptions(["", "", "", ""]);
       setCorrectAnswer("");
       setSelectedTopic("");
-      router.push("/adminDashboard");
+      router.push("/admin/dashboard");
     } catch (error) {
       toast.error("Failed to add question: " + error.message);
     }
@@ -94,7 +95,9 @@ const AddQuestion = () => {
     questionBlocks.forEach((block) => {
       try {
         const questionMatch = block.match(/^([^\nA]+)(?=\s*A\))/);
-        const optionMatches = block.match(/A\)\s*(.*?)\s*(?=B\))B\)\s*(.*?)\s*(?=C\))C\)\s*(.*?)\s*(?=D\))D\)\s*(.*?)(?=\s*Answer:)/s);
+        const optionMatches = block.match(
+          /A\)\s*(.*?)\s*(?=B\))B\)\s*(.*?)\s*(?=C\))C\)\s*(.*?)\s*(?=D\))D\)\s*(.*?)(?=\s*Answer:)/s
+        );
         const answerMatch = block.match(/Answer:\s*([ABCD])/);
         const explanationMatch = block.match(/Explanation:\s*(.*?)(?=\s*Topic:|\n|$)/);
         const topicMatch = block.match(/Topic:\s*(.*?)(?=\n|$)/);
@@ -106,14 +109,14 @@ const AddQuestion = () => {
 
           structuredQuestions.push({
             questionText: questionMatch[1].trim(),
-            options: [optionMatches[1], optionMatches[2], optionMatches[3], optionMatches[4]].map(opt => opt.trim()),
+            options: [optionMatches[1], optionMatches[2], optionMatches[3], optionMatches[4]].map((opt) => opt.trim()),
             correctOptionIdx: answerIndex,
             topicId,
             explanation: explanationMatch?.[1]?.trim() || "",
           });
         }
       } catch (err) {
-        toast.error('Error parsing question block: ' + err.message);
+        toast.error("Error parsing question block: " + err.message);
       }
     });
 
@@ -121,13 +124,15 @@ const AddQuestion = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-[${THEME.secondary_1}] p-4 sm:p-8 flex flex-col items-center`}>
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-md p-6 sm:p-10 space-y-6">
-        <h2 className={`text-2xl sm:text-3xl font-bold text-[${THEME.primary_3}] text-center`}>Add New Question</h2>
+    <div className={`min-h-screen bg-blue-200 p-4 sm:p-8 flex flex-col items-center`}>
+      <div className="w-full max-w-3xl bg-[#f9fafb] rounded-xl shadow-md p-6 sm:p-10 space-y-6">
+        <h2 className={`text-2xl sm:text-3xl font-bold text-center`}
+          style={{ color: THEME.primary }}>Add New Question</h2>
 
         {/* PDF Upload */}
         <div>
-          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Upload PDF for Bulk Questions</label>
+          <label className={`block font-semibold mb-2`}
+            style={{ color: THEME.neutral900 }}>Upload PDF for Bulk Questions</label>
           <input
             type="file"
             accept="application/pdf"
@@ -138,10 +143,11 @@ const AddQuestion = () => {
 
         {/* Question Input */}
         <div>
-          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Question</label>
+          <label className={`block font-semibold mb-2`}
+            style={{ color: THEME.neutral900 }}>Question</label>
           <textarea
             rows="3"
-            className={`w-full border placeholder-black border-[${THEME.primary_1}] rounded-md p-3 focus:ring-2 focus:ring-[${THEME.primary_2}]`}
+            className={`w-full border placeholder-black border-blue-100 rounded-md p-3 focus:ring-2 focus:ring-blue-200 text-black`}
             placeholder="Enter your question here..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -150,13 +156,14 @@ const AddQuestion = () => {
 
         {/* Options Input */}
         <div>
-          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Options</label>
+          <label className={`block font-semibold mb-2`}
+            style={{ color: THEME.neutral900 }}>Options</label>
           <div className="space-y-3">
             {options.map((opt, index) => (
-              <input
+              <Input
                 key={index}
                 type="text"
-                className={`w-full placeholder-black border border-[${THEME.primary_1}] p-3 rounded-md focus:ring-2 focus:ring-[${THEME.primary_2}]`}
+                className={`w-full placeholder-black border p-3 rounded-md focus:ring-2 focus:ring-blue-200 text-black`}
                 placeholder={`Option ${index + 1}`}
                 value={opt}
                 onChange={(e) => handleOptionChange(index, e.target.value)}
@@ -167,7 +174,8 @@ const AddQuestion = () => {
 
         {/* Correct Answer */}
         <div>
-          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Correct Answer</label>
+          <label className={`block font-semibold mb-2`}
+            style={{ color: THEME.neutral900 }}>Correct Answer</label>
           <select
             className={`w-full border border-[${THEME.primary_1}] p-3 rounded-md text-gray-700 focus:ring-2 focus:ring-[${THEME.primary_2}]`}
             value={correctAnswer}
@@ -182,7 +190,8 @@ const AddQuestion = () => {
 
         {/* Topic Dropdown */}
         <div>
-          <label className={`block text-[${THEME.primary_4}] font-semibold mb-2`}>Select Topic</label>
+          <label className={`block font-semibold mb-2`}
+            style={{ color: THEME.neutral900 }}>Select Topic</label>
           <select
             className={`w-full border border-[${THEME.primary_1}] p-3 rounded-md text-gray-700 focus:ring-2 focus:ring-[${THEME.primary_2}]`}
             value={selectedTopic}
@@ -190,7 +199,9 @@ const AddQuestion = () => {
           >
             <option value="">Select Topic</option>
             {topics.map((topic) => (
-              <option key={topic.id} value={topic.name}>{topic.name}</option>
+              <option key={topic.id} value={topic.name}>
+                {topic.name}
+              </option>
             ))}
           </select>
         </div>
