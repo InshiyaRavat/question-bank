@@ -51,5 +51,7 @@ export default function Home() {
     getSubscriptionStatus();
   }, [isLoaded, isSignedIn, router, user]);
 
-  return <Subscription />;
+  return (
+    <Subscription />
+  );
 }

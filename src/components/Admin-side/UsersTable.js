@@ -299,7 +299,7 @@ export default function UsersTable() {
                 </span>
               </div>
 
-              <Button
+              <button
                 variant="outline"
                 size="sm"
                 disabled={currentPage >= totalPages}
@@ -308,7 +308,7 @@ export default function UsersTable() {
               >
                 Next
                 <ChevronRight className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
           </div>
         </CardContent>

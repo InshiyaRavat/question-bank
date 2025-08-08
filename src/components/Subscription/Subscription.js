@@ -2,75 +2,119 @@
 import React, { useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PlanContext } from "@/context/PlanContext";
+import { THEME } from '@/theme'
 
-const plans = [
-  {
-    duration: "6 Months",
-    price: "£10",
-    value: 10,
-  },
-  {
-    duration: "12 Months",
-    price: "£20",
-    value: 20,
-  },
-];
-
-export default function Subscription() {
+const Subscription = () => {
   const { plan, setPlan } = useContext(PlanContext);
   const router = useRouter();
 
-  const handleClick = (value) => {
-    setPlan(value);
+  const handleClick = (e) => {
+    const selectedPlan = e.target.dataset.value;
+    console.log("selectedplan: ", selectedPlan);
+    setPlan(selectedPlan);
   };
 
   useEffect(() => {
     if (plan !== null) {
+      console.log("plan set to: ", plan);
       router.push("/payment-form");
     }
   }, [plan]);
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 px-6 py-12">
-      <div className="max-w-5xl mx-auto text-center mb-12">
-        <h1 className="text-3xl font-semibold">Choose Your Plan</h1>
-        <p className="text-gray-500 mt-2">
-          Unlock access to tests, materials, and performance tracking.
-        </p>
-      </div>
-
-      <div className="flex flex-col lg:flex-row justify-center items-stretch gap-8">
-        {plans.map((planOption) => (
-          <div
-            key={planOption.value}
-            className="flex flex-col justify-between border border-gray-200 rounded-xl shadow-sm bg-white w-full max-w-md p-8 transition hover:shadow-md"
-          >
-            <div>
-              <h2 className="text-2xl font-bold mb-2">{planOption.price} <span className="text-sm text-gray-500">/ month</span></h2>
-              <p className="text-lg font-medium text-gray-700 mb-4">{planOption.duration}</p>
-              <p className="text-sm text-gray-500 mb-6">
-                Full access to all features including:
-              </p>
-              <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
-                <li>Test mode & practice mode</li>
-                <li>Performance tracking</li>
-                <li>Custom study plans</li>
-                <li>Exclusive updates</li>
-              </ul>
-            </div>
+    <div className="min-h-screen bg-white text-black p-8">
+      <div className="flex flex-col lg:flex-row items-center justify-center gap-10">
+        {/* 6-month plan */}
+        <div className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300"
+          style={{ background: THEME.surface }}>
+          <div className="text-center">
+            <span className="text-4xl font-bold"
+              style={{ color: THEME.primary }}>
+              £10{" "}
+              <small className="text-sm font-medium">/ month</small>
+            </span>
+            <p className="text-2xl mt-2 font-semibold "
+              style={{ color: THEME.textSecondary }}>
+              6 Months
+            </p>
+            <p className="text-sm mt-4 "
+              style={{ color: THEME.neutral700 }}>
+              Subscribe to unlock full access to{" "}
+              <strong className="">
+                study materials, tests, performance tracking, and peer
+                discussions
+              </strong>
+              —everything you need to excel in your learning journey!
+            </p>
+          </div>
+          <ul className="mt-6 text-sm space-y-2 list-disc list-inside"
+            style={{ color: THEME.neutral900 }}>
+            <li>Test mode</li>
+            <li>Practice mode</li>
+            <li>Performance tracking</li>
+            <li>Custom study plans</li>
+            <li>Exclusive updates</li>
+          </ul>
+          <div className="text-center mt-6">
             <button
-              onClick={() => handleClick(planOption.value)}
-              className="mt-8 bg-blue-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer"
+              className="text-blue-900 font-bold py-2 px-6 rounded-full shadow-lg transition hover:bg-blue-700 hover:text-white"
+              onClick={() =>
+                handleClick({ target: { dataset: { value: 10 } } })
+              }
             >
-              Choose Plan
+              Buy Plan
             </button>
           </div>
-        ))}
+        </div>
+
+        {/* 12-month plan */}
+        <div className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300"
+          style={{ background: THEME.surface }}>
+          <div className="text-center">
+            <span className="text-4xl font-bold"
+              style={{ color: THEME.primary }}>
+              £20{" "}
+              <small className="text-sm font-medium ">/ month</small>
+            </span>
+            <p className="text-2xl mt-2 font-semibold "
+              style={{ color: THEME.textSecondary }}>
+              12 Months
+            </p>
+            <p className="text-sm mt-4"
+              style={{ color: THEME.neutral700 }}>
+              Subscribe to unlock full access to{" "}
+              <strong className="">
+                study materials, tests, performance tracking, and peer
+                discussions
+              </strong>
+              —everything you need to excel in your learning journey!
+            </p>
+          </div>
+          <ul className="mt-6 text-sm space-y-2 list-disc list-inside">
+            <li>Test mode</li>
+            <li>Practice mode</li>
+            <li>Performance tracking</li>
+            <li>Custom study plans</li>
+            <li>Exclusive updates</li>
+          </ul>
+          <div className="text-center mt-6">
+            <button
+              className="text-blue-900 font-bold py-2 px-6 rounded-full shadow-lg transition hover:bg-blue-700 hover:text-white"
+              onClick={() =>
+                handleClick({ target: { dataset: { value: 20 } } })
+              }
+            >
+              Buy Plan
+            </button>
+          </div>
+        </div>
       </div>
 
-      <p className="text-center text-sm text-gray-500 mt-10">
-        <strong>Note:</strong> All features are included in both plans — only the duration differs.
-      </p>
+      <h3 className="mt-10 text-center text-sm">
+        <strong>Note:</strong> Features are identical across plans—only the
+        duration (6 or 12 months) differs.
+      </h3>
     </div>
   );
-}
+};
+
+export default Subscription;

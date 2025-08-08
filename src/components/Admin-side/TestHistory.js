@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, Clock, CheckCircle, XCircle } from "lucide-react";
+import { BookOpen, Clock, CheckCircle } from "lucide-react";
 
 const TestHistory = ({ history }) => {
   if (!history || history.error) {
@@ -41,8 +41,6 @@ const TestHistory = ({ history }) => {
                 <TableRow>
                   <TableHead>Topic Name</TableHead>
                   <TableHead>Questions Attempted</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Performance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -58,24 +56,6 @@ const TestHistory = ({ history }) => {
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">{attempted}</span>
                           <span className="text-muted-foreground text-sm">questions</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={performanceColor}>{performance}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {attempted > 0 ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                              <span className="text-sm">In Progress</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-muted-foreground">Pending</span>
-                            </>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -139,9 +119,8 @@ const TestHistory = ({ history }) => {
                   <div key={topic.topicId} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-2 h-2 rounded-full ${
-                          topic.questionsAttempted > 0 ? "bg-green-500" : "bg-gray-300"
-                        }`}
+                        className={`w-2 h-2 rounded-full ${topic.questionsAttempted > 0 ? "bg-green-500" : "bg-gray-300"
+                          }`}
                       ></div>
                       <div>
                         <p className="font-medium">{topic.topicName}</p>

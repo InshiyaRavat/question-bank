@@ -150,13 +150,13 @@ const AdminQuestionList = ({ searchTerm }) => {
 
       {/* Edit Dialog */}
       {editDialog && selectedQuestion && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 p-4 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-blue-200 bg-opacity-70 p-4 z-50">
           <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-lg text-black">
             <h3 className="text-xl font-bold mb-4 text-center">Edit Question</h3>
             <div className="grid gap-3">
               <button
                 onClick={() => handleFieldEdit("questionText")}
-                style={{ backgroundColor: THEME.primary_2 }}
+                style={{ color: THEME.neutral500 }}
                 className="text-white px-4 py-2 rounded hover:opacity-90"
               >
                 Edit Question Text
@@ -164,7 +164,7 @@ const AdminQuestionList = ({ searchTerm }) => {
               <button
                 onClick={() => handleFieldEdit("correctOptionIdx")}
                 style={{ backgroundColor: THEME.primary_1, color: "black" }}
-                className="px-4 py-2 rounded hover:opacity-90"
+                className="px-4 py-2 rounded hover:opacity-90 text-red-500"
               >
                 Edit Correct Answer Index
               </button>
@@ -172,7 +172,7 @@ const AdminQuestionList = ({ searchTerm }) => {
                 <button
                   key={idx}
                   onClick={() => handleFieldEdit(`option-${idx}`)}
-                  style={{ backgroundColor: THEME.secondary_1, color: "black" }}
+                  style={{ backgroundColor: THEME.neutral100, color: "black" }}
                   className="px-4 py-2 rounded hover:opacity-90 text-left"
                 >
                   Edit Option {idx + 1}: {opt}
@@ -192,15 +192,15 @@ const AdminQuestionList = ({ searchTerm }) => {
                 <div className="flex gap-3 mt-4 flex-col sm:flex-row">
                   <button
                     onClick={updateQuestion}
-                    style={{ backgroundColor: THEME.primary_2 }}
-                    className="flex-1 text-white px-4 py-2 rounded hover:opacity-90"
+                    style={{ backgroundColor: THEME.primary }}
+                    className="flex-1 px-4 py-2 rounded hover:opacity-90 text-white cursor-pointer"
                   >
                     Update
                   </button>
                   <button
                     onClick={() => setEditDialog(false)}
-                    style={{ backgroundColor: THEME.secondary_6 }}
-                    className="flex-1 text-white px-4 py-2 rounded hover:opacity-90"
+                    style={{ backgroundColor: THEME.primary }}
+                    className="flex-1 text-white px-4 py-2 rounded hover:opacity-90 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -213,7 +213,7 @@ const AdminQuestionList = ({ searchTerm }) => {
 
       {/* Delete Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-blue-200 bg-opacity-70 z-50 p-4">
           <div className="bg-white text-black p-6 rounded-xl w-full max-w-md shadow-lg text-center">
             <p className="mb-4 text-lg">Are you sure you want to delete this question?</p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -222,8 +222,8 @@ const AdminQuestionList = ({ searchTerm }) => {
               </button>
               <button
                 onClick={() => confirmDelete(selectedQuestion.id)}
-                style={{ backgroundColor: THEME.secondary_5 }}
-                className="px-4 py-2 rounded text-white hover:opacity-90"
+                style={{ backgroundColor: THEME.primary }}
+                className="px-4 py-2 text-white rounded hover:opacity-90"
               >
                 Yes, Delete
               </button>

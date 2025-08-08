@@ -1,6 +1,6 @@
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import {PlanProvider} from "@/context/PlanContext";
+import { PlanProvider } from "@/context/PlanContext";
 import { AttemptedQuestionProvider } from "@/context/AttemptedQuestionContext";
 import { SelectedTopicsProvider } from "@/context/SelectedTopicsContext";
 import { Inter } from 'next/font/google';
