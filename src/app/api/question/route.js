@@ -15,8 +15,8 @@ export async function GET(req) {
   }
 
   // Collect selected topicIds from query string (e.g., topicId=1&topicId=2)
-  const topicIds = searchParams.getAll("topicId").map(id => parseInt(id));
-  console.log(searchParams)
+  const topicIds = searchParams.getAll("topicId").map((id) => parseInt(id));
+  console.log(searchParams);
   console.log("Selected Topic IDs:", topicIds);
   try {
     // Step 1: Get all correctly solved questions by the user
@@ -60,7 +60,6 @@ export async function GET(req) {
   }
 }
 
-
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -92,7 +91,6 @@ export async function POST(req) {
         },
       }),
     ]);
-
 
     return NextResponse.json(question, { status: 201 });
   } catch (error) {

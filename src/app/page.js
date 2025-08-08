@@ -1,12 +1,12 @@
-'use client'
-import { useUser } from "@clerk/nextjs"
-import Subscription from "@/components/Subscription/Subscription"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+"use client";
+import { useUser } from "@clerk/nextjs";
+import Subscription from "@/components/Subscription/Subscription";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
-  const router = useRouter()
-  const { isLoaded, isSignedIn, user } = useUser()
+  const router = useRouter();
+  const { isLoaded, isSignedIn, user } = useUser();
 
   useEffect(() => {
     const isAdmin = async () => {
@@ -15,7 +15,7 @@ export default function Home() {
       try {
         console.log(user.username);
         if (user.username === "admin") {
-          router.push("/admin-dashboard");
+          router.push("/admin/dashboard");
         }
       } catch (e) {
         console.log(e);
@@ -24,7 +24,6 @@ export default function Home() {
 
     isAdmin();
   }, [isLoaded, isSignedIn, router, user]);
-
 
   useEffect(() => {
     const getSubscriptionStatus = async () => {
@@ -52,7 +51,5 @@ export default function Home() {
     getSubscriptionStatus();
   }, [isLoaded, isSignedIn, router, user]);
 
-  return (
-    <Subscription />
-  );
+  return <Subscription />;
 }

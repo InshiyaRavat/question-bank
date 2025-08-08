@@ -61,7 +61,7 @@ const AddQuestion = () => {
       setOptions(["", "", "", ""]);
       setCorrectAnswer("");
       setSelectedTopic("");
-      router.push("/admin-dashboard");
+      router.push("/admin/dashboard");
     } catch (error) {
       toast.error("Failed to add question: " + error.message);
     }
@@ -94,7 +94,9 @@ const AddQuestion = () => {
     questionBlocks.forEach((block) => {
       try {
         const questionMatch = block.match(/^([^\nA]+)(?=\s*A\))/);
-        const optionMatches = block.match(/A\)\s*(.*?)\s*(?=B\))B\)\s*(.*?)\s*(?=C\))C\)\s*(.*?)\s*(?=D\))D\)\s*(.*?)(?=\s*Answer:)/s);
+        const optionMatches = block.match(
+          /A\)\s*(.*?)\s*(?=B\))B\)\s*(.*?)\s*(?=C\))C\)\s*(.*?)\s*(?=D\))D\)\s*(.*?)(?=\s*Answer:)/s
+        );
         const answerMatch = block.match(/Answer:\s*([ABCD])/);
         const explanationMatch = block.match(/Explanation:\s*(.*?)(?=\s*Topic:|\n|$)/);
         const topicMatch = block.match(/Topic:\s*(.*?)(?=\n|$)/);
@@ -106,14 +108,14 @@ const AddQuestion = () => {
 
           structuredQuestions.push({
             questionText: questionMatch[1].trim(),
-            options: [optionMatches[1], optionMatches[2], optionMatches[3], optionMatches[4]].map(opt => opt.trim()),
+            options: [optionMatches[1], optionMatches[2], optionMatches[3], optionMatches[4]].map((opt) => opt.trim()),
             correctOptionIdx: answerIndex,
             topicId,
             explanation: explanationMatch?.[1]?.trim() || "",
           });
         }
       } catch (err) {
-        toast.error('Error parsing question block: ' + err.message);
+        toast.error("Error parsing question block: " + err.message);
       }
     });
 
@@ -190,7 +192,9 @@ const AddQuestion = () => {
           >
             <option value="">Select Topic</option>
             {topics.map((topic) => (
-              <option key={topic.id} value={topic.name}>{topic.name}</option>
+              <option key={topic.id} value={topic.name}>
+                {topic.name}
+              </option>
             ))}
           </select>
         </div>
