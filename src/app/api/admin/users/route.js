@@ -36,7 +36,6 @@ export async function GET(req) {
       ...(query ? { query } : {}),
       orderBy,
     });
-    console.log("data", data);
 
     const users = data.map((u) => {
       const primaryEmail =
@@ -70,7 +69,6 @@ export async function GET(req) {
         return order === "asc" ? av - bv : bv - av;
       });
     }
-    console.log("users", users);
 
     return new Response(JSON.stringify({ users, totalCount }), {
       status: 200,

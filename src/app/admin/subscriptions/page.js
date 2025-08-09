@@ -1,0 +1,380 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  BarChart3,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Calendar,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from "lucide-react";
+import { THEME } from "@/theme";
+
+export default function AdminSubscriptionsPage() {
+  const [stats, setStats] = useState(null);
+  const [paymentLogs, setPaymentLogs] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [paymentLogsLoading, setPaymentLogsLoading] = useState(false);
+  const [refundingPayment, setRefundingPayment] = useState(null);
+
+  // Fetch subscription statistics
+  const fetchStats = async () => {
+    try {
+      const response = await fetch("/api/admin/subscriptions/stats");
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch payment logs
+  const fetchPaymentLogs = async (page = 1) => {
+    setPaymentLogsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/payments/logs?page=${page}&limit=20`);
+      const data = await response.json();
+      if (data.success) {
+        setPaymentLogs(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching payment logs:", error);
+    } finally {
+      setPaymentLogsLoading(false);
+    }
+  };
+
+  // Handle refund
+  const handleRefund = async (stripePaymentId, reason = "Admin refund") => {
+    if (!confirm("Are you sure you want to process this refund?")) return;
+
+    setRefundingPayment(stripePaymentId);
+    try {
+      const response = await fetch("/api/admin/payments/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stripePaymentId, reason }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert("Refund processed successfully!");
+        fetchPaymentLogs(); // Refresh logs
+        fetchStats(); // Refresh stats
+      } else {
+        alert(`Refund failed: ${data.error}`);
+      }
+    } catch (error) {
+      alert(`Refund failed: ${error.message}`);
+    } finally {
+      setRefundingPayment(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    fetchPaymentLogs();
+  }, []);
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "succeeded":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "processing":
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      case "requires_payment_method":
+        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+      case "canceled":
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const variants = {
+      succeeded: "default",
+      processing: "secondary",
+      requires_payment_method: "destructive",
+      canceled: "outline",
+    };
+    return (
+      <Badge variant={variants[status] || "outline"} className="capitalize">
+        {status.replace("_", " ")}
+      </Badge>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <RefreshCw className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ color: THEME.neutral900 }}>
+            Subscription Management
+          </h1>
+          <p className="text-muted-foreground">Monitor subscription statistics and manage payments</p>
+        </div>
+        <Button
+          onClick={() => {
+            fetchStats();
+            fetchPaymentLogs();
+          }}
+          variant="outline"
+          className='text-black cursor-pointer'
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh Data
+        </Button>
+      </div>
+
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="overview">Subscription Stats</TabsTrigger>
+          <TabsTrigger value="payments">Payment Logs</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Subscriptions</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.overview.totalSubscriptions || 0}</div>
+                <p className="text-xs text-muted-foreground">All time subscriptions</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{stats?.overview.activeSubscriptions || 0}</div>
+                <p className="text-xs text-muted-foreground">Currently active</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">£{stats?.overview.totalEstimatedRevenue || 0}</div>
+                <p className="text-xs text-muted-foreground">Estimated total revenue</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Stripe Payments</CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.overview.stripePaymentsCount || 0}</div>
+                <p className="text-xs text-muted-foreground">Last 12 months</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Subscriptions by Duration</CardTitle>
+                <CardDescription>Distribution of subscription plans</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {stats?.charts.subscriptionsByDuration?.map((item) => (
+                    <div key={item.duration} className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{item.label}</span>
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className="h-2 rounded-full bg-blue-500"
+                          style={{
+                            width: `${Math.max(20, (item.count / stats.overview.totalSubscriptions) * 200)}px`,
+                          }}
+                        />
+                        <span className="text-sm text-muted-foreground">{item.count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue by Plan</CardTitle>
+                <CardDescription>Revenue breakdown by subscription duration</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {stats?.charts.revenueByDuration?.map((item) => (
+                    <div key={item.duration} className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{item.duration === 6 ? "6 Months" : "12 Months"}</span>
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className="h-2 rounded-full bg-green-500"
+                          style={{
+                            width: `${Math.max(
+                              20,
+                              (item.estimatedRevenue / stats.overview.totalEstimatedRevenue) * 200
+                            )}px`,
+                          }}
+                        />
+                        <span className="text-sm text-muted-foreground">£{item.estimatedRevenue}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Subscriptions</CardTitle>
+              <CardDescription>Latest subscription activity</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats?.recentActivity?.map((sub) => (
+                  <div key={sub.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">User ID: {sub.userId}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {sub.duration} months • {new Date(sub.subscribedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Badge variant={sub.status === "active" ? "default" : "secondary"}>{sub.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Logs</CardTitle>
+              <CardDescription>Recent payment transactions from Stripe</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {paymentLogsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Summary */}
+                  {paymentLogs?.summary && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium">Total Amount</p>
+                        <p className="text-lg font-bold">£{paymentLogs.summary.totalAmount.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Total Transactions</p>
+                        <p className="text-lg font-bold">{paymentLogs.summary.totalTransactions}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Success Rate</p>
+                        <p className="text-lg font-bold">
+                          {paymentLogs.summary.statusBreakdown.find((s) => s.status === "succeeded")?.count || 0}/
+                          {paymentLogs.summary.totalTransactions}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payment Logs Table */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-medium">Payment ID</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium">User ID</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium">Amount</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {paymentLogs?.logs?.map((log) => (
+                            <tr key={log.stripePaymentId} className="hover:bg-gray-50">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center space-x-2">
+                                  {getStatusIcon(log.status)}
+                                  <span className="text-sm font-mono">{log.stripePaymentId.slice(0, 20)}...</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm">{log.userId}</td>
+                              <td className="px-4 py-3">
+                                <span className="text-sm font-medium">
+                                  £{log.amount.toFixed(2)} {log.currency}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">{getStatusBadge(log.status)}</td>
+                              <td className="px-4 py-3 text-sm">{new Date(log.createdAt).toLocaleString()}</td>
+                              <td className="px-4 py-3">
+                                {log.status === "succeeded" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleRefund(log.stripePaymentId)}
+                                    disabled={refundingPayment === log.stripePaymentId}
+                                  >
+                                    {refundingPayment === log.stripePaymentId ? (
+                                      <RefreshCw className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      "Refund"
+                                    )}
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

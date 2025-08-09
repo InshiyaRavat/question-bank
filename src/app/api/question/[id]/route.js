@@ -5,10 +5,10 @@ export async function DELETE(_, { params }) {
   const { id } = params;
 
   if (!id) {
-    return new Response(
-      JSON.stringify({ error: "Question ID is required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Question ID is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -47,10 +47,10 @@ export async function DELETE(_, { params }) {
     });
   } catch (error) {
     console.error("Delete Question Error:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to delete question" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Failed to delete question" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 

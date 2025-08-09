@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { BookOpen, Clock, CheckCircle } from "lucide-react";
 
 const TestHistory = ({ history }) => {
+  console.log("history", history);
   if (!history || history.error) {
     return (
       <Card>
@@ -44,17 +45,20 @@ const TestHistory = ({ history }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topics.map((topic) => {
+                {topics.map((topic, index) => {
                   const attempted = topic.questionsAttempted || 0;
+                  const totalQuestions = topic.noOfQuestions || 0;
                   const performance = attempted > 0 ? "Active" : "Not Started";
                   const performanceColor = attempted > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
 
                   return (
-                    <TableRow key={topic.topicId}>
+                    <TableRow key={index}>
                       <TableCell className="font-medium">{topic.topicName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">{attempted}</span>
+                          <span className="font-semibold">
+                            {attempted}/{totalQuestions}
+                          </span>
                           <span className="text-muted-foreground text-sm">questions</span>
                         </div>
                       </TableCell>
@@ -115,12 +119,13 @@ const TestHistory = ({ history }) => {
               topics
                 .sort((a, b) => (b.questionsAttempted || 0) - (a.questionsAttempted || 0))
                 .slice(0, 5)
-                .map((topic) => (
-                  <div key={topic.topicId} className="flex items-center justify-between p-3 border rounded-lg">
+                .map((topic, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-2 h-2 rounded-full ${topic.questionsAttempted > 0 ? "bg-green-500" : "bg-gray-300"
-                          }`}
+                        className={`w-2 h-2 rounded-full ${
+                          topic.questionsAttempted > 0 ? "bg-green-500" : "bg-gray-300"
+                        }`}
                       ></div>
                       <div>
                         <p className="font-medium">{topic.topicName}</p>

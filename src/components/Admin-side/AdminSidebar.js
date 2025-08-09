@@ -127,7 +127,9 @@ export function AdminSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={item.description}
-                      className={`hover:bg-blue-200 hover:text-sidebar-accent-foreground ${isActive ? 'text-blue-700' : ''}`}
+                      className={`hover:bg-blue-200 hover:text-sidebar-accent-foreground ${
+                        isActive ? "text-blue-700" : ""
+                      }`}
                     >
                       <Link href={item.url} className="flex items-center gap-3">
                         <item.icon className="h-4 w-4" />
@@ -185,7 +187,9 @@ export function AdminSidebarProvider({ children }) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1" style={{ backgroundColor: THEME.background }}>
+          {children}
+        </main>
       </div>
     </SidebarProvider>
   );

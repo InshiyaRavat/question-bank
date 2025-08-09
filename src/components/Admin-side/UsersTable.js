@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Users, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import UserProgress from "./UserProgress";
 import TestHistory from "./TestHistory";
-import THEME from '@/theme';
+import THEME from "@/theme";
 
 const formatDate = (ts) => {
   try {
@@ -107,7 +107,7 @@ export default function UsersTable() {
         </div>
 
         {/* User Details Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} >
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="progress">Progress Overview</TabsTrigger>
             <TabsTrigger value="history">Test History</TabsTrigger>
@@ -251,7 +251,15 @@ export default function UsersTable() {
                       </TableCell>
                       <TableCell>{user.email || "-"}</TableCell>
                       {/* style={{ backgroundColor: THEME.primary }} */}
-                      <TableCell>{user.username ? <Badge variant="outline" className='text-blue-600 border-blue-600' >{user.username}</Badge> : "-"}</TableCell>
+                      <TableCell>
+                        {user.username ? (
+                          <Badge variant="outline" className="text-blue-600 border-blue-600">
+                            {user.username}
+                          </Badge>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
                       <TableCell>{user.birthday || "-"}</TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
                       <TableCell className="text-right">

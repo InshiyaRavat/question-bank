@@ -6,7 +6,8 @@ const prisma = new PrismaClient();
 // Returns summary of attempts per topic and solved summary
 export async function GET(_req, { params }) {
   try {
-    const userId = params?.id;
+    const { id } = await params;
+    const userId = id;
     if (!userId) {
       return new Response(JSON.stringify({ error: "User ID is required" }), {
         status: 400,
@@ -18,7 +19,7 @@ export async function GET(_req, { params }) {
       where: { userId },
       include: {
         topic: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, noOfQuestions: true },
         },
       },
       orderBy: { topicId: "asc" },
@@ -38,7 +39,10 @@ export async function GET(_req, { params }) {
       topicId: a.topicId,
       topicName: a.topic?.name || `Topic ${a.topicId}`,
       questionsAttempted: a.questionsAttempted,
+      noOfQuestions: a.topic?.noOfQuestions || 0,
     }));
+
+    console.log("topics", topics);
 
     return new Response(
       JSON.stringify({
