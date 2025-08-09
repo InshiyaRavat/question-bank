@@ -15,7 +15,7 @@ export default function Home() {
       try {
         console.log(user.username);
         if (user.username === "admin") {
-          router.push("/admin/dashboard");
+          router.push("/admin/users");
         }
       } catch (e) {
         console.log(e);
