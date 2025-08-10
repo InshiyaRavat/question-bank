@@ -30,46 +30,57 @@ export default function Result() {
   const percentage = ((score / 50) * 100).toFixed(2);
 
   return (
-    <div className={`flex items-center justify-center min-h-screen bg-gradient-to-br from-[${THEME.primary_1}] via-[${THEME.secondary_1}] to-[${THEME.secondary_2}] p-6`}>
-      <div className={`bg-[#F9F6F1] shadow-2xl rounded-2xl p-10 max-w-2xl w-full text-center space-y-6 border border-[${THEME.secondary_3}]`}>
-        <h1 className={`text-3xl font-extrabold text-[${THEME.primary_3}]`}>🎉 Quiz Completed!</h1>
+    <div className={`flex items-center justify-center min-h-screen bg-blue-200 p-6`}>
+      <div className={`bg-[#F9F6F1] shadow-2xl rounded-2xl p-10 max-w-2xl w-full text-center space-y-6 border`}>
+        <h1 className={`text-3xl font-extrabold`}
+          style={{ color: THEME.textPrimary }}>🎉 Quiz Completed!</h1>
 
         <div className="flex flex-col items-center gap-4">
-          <div className={`text-4xl font-bold text-[${THEME.secondary_6}]`}>
+          <div className={`text-4xl font-bold`}
+            style={{ color: THEME.textPrimary }}>
             ⭐ {score} / 50
           </div>
-          <p className={`text-lg text-[${THEME.primary_4}] font-medium`}>Total Score</p>
+          <p className={`text-lg font-medium`}
+            style={{ color: THEME.textSecondary }}>Total Score</p>
 
           <div className="w-full flex justify-around mt-4">
-            <div className={`bg-[${THEME.primary_1}] text-[${THEME.primary_4}] rounded-xl px-4 py-2 shadow font-semibold`}>
+            <div className={`bg-green-100 rounded-xl px-4 py-2 shadow font-semibold`}
+              style={{ color: THEME.success }}
+            >
               ✅ Correct: {correct}
             </div>
-            <div className={`bg-[${THEME.secondary_2}] text-[${THEME.primary_4}] rounded-xl px-4 py-2 shadow font-semibold`}>
+            <div className={`bg-red-100 rounded-xl px-4 py-2 shadow font-semibold`}
+              style={{ color: THEME.error }}>
               ❌ Incorrect: {incorrect}
             </div>
-            <div className={`bg-[${THEME.secondary_1}] text-[${THEME.primary_4}] rounded-xl px-4 py-2 shadow font-semibold`}>
+            <div className={`bg-amber-100 rounded-xl px-4 py-2 shadow font-semibold`}
+              style={{ color: THEME.warning }}
+            >
               ❓ Unattempted: {50 - (correct + incorrect)}
             </div>
           </div>
 
-          <div className={`mt-4 text-sm text-[${THEME.primary_3}] font-semibold`}>
-            Accuracy: <span className={`text-[${THEME.secondary_5}]`}>{percentage}%</span>
+          <div className={`mt-4 text-sm font-semibold`} style={{ color: THEME.textPrimary }}>
+            Accuracy: <span style={{ color: THEME.textPrimary }}>{percentage}%</span>
           </div>
         </div>
 
         {correctQuestions.length > 0 && (
           <div className="mt-8 text-left">
-            <h2 className={`text-lg font-semibold text-[${THEME.primary_2}] mb-2`}>✅ Correct Questions:</h2>
+            <h2 className={`text-lg font-semibold mb-2`}
+              style={{ color: THEME.textPrimary }}>✅ Correct Questions:</h2>
             <div className="flex flex-wrap gap-2">
               {correct > 0 ? correctQuestions.map((q, idx) => (
                 <span
                   key={idx}
-                  className={`px-3 py-1 bg-[${THEME.primary_1}] text-[${THEME.primary_4}] rounded-full text-sm font-medium shadow`}
+                  className={`px-3 py-1 rounded-full text-sm font-medium shadow`}
+                  style={{ color: THEME.textPrimary }}
                 >
                   {q}
                 </span>
               )) : (
-                <span className={`px-3 py-1 bg-[${THEME.secondary_1}] text-[${THEME.primary_4}] rounded-full text-sm font-medium shadow`}>
+                <span className={`px-3 py-1 bg-red-100 rounded-full text-sm font-medium shadow`}
+                  style={{ color: THEME.error }}>
                   No correct questions
                 </span>
               )}
@@ -79,17 +90,19 @@ export default function Result() {
 
         {incorrectQuestions.length > 0 && (
           <div className="mt-6 text-left">
-            <h2 className={`text-lg font-semibold text-[${THEME.secondary_3}] mb-2`}>❌ Incorrect Questions:</h2>
+            <h2 className={`text-lg font-semibold mb-2`}
+              style={{ color: THEME.error }}>❌ Incorrect Questions:</h2>
             <div className="flex flex-wrap gap-2">
               {incorrect > 0 ? incorrectQuestions.map((q, idx) => (
                 <span
                   key={idx}
-                  className={`px-3 py-1 bg-[${THEME.secondary_2}] text-[${THEME.primary_4}] rounded-full text-sm font-medium shadow`}
+                  className={`px-3 py-1 bg-red-100 rounded-full text-sm font-medium shadow`}
+                  style={{ color: THEME.error }}
                 >
                   {q}
                 </span>
               )) : (
-                <span className={`px-3 py-1 bg-[${THEME.secondary_1}] text-[${THEME.primary_4}] rounded-full text-sm font-medium shadow`}>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium shadow`} style={{ color: THEME.warning }}>
                   No incorrect questions
                 </span>
               )}
@@ -98,8 +111,8 @@ export default function Result() {
         )}
 
         <button
-          className={`mt-10 px-6 py-3 bg-[${THEME.primary_2}] text-white rounded-lg font-semibold hover:bg-[${THEME.primary_3}] transition shadow-md`}
-          onClick={() => window.location.href = '/QuestionTopic'}
+          className={`mt-10 px-6 py-3 bg-blue-200 text-black cursor-pointer rounded-lg font-semibold hover:bg-blue-400 transition shadow-md`}
+          onClick={() => window.location.href = '/question-topic'}
         >
           Go to Home
         </button>

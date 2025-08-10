@@ -32,7 +32,7 @@ const PayForm = () => {
             console.log("calling api with plan =", plan)
 
             const { data } = await axios.post('/api/create-payment-intent', {
-                amount: Number(plan),
+                amount: plan,
             })
             const clientSecret = data.clientSecret
 
