@@ -35,27 +35,27 @@ const Question = (props) => {
     );
 
     if (!isRetest) {
-    const queryParams = new URLSearchParams();
-    queryParams.append("userId", user.id);
-    topicIds.forEach((id) => queryParams.append("topicId", id));
+      const queryParams = new URLSearchParams();
+      queryParams.append("userId", user.id);
+      topicIds.forEach((id) => queryParams.append("topicId", id));
 
-    const queryString = queryParams.toString();
+      const queryString = queryParams.toString();
 
-    fetch(`/api/question?${queryString}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, 50);
-        setQuestions(shuffled);
+      fetch(`/api/question?${queryString}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, 50);
+          setQuestions(shuffled);
 
-        if (type !== "practice") {
-          const ids = shuffled.map(q => q.id);
-          localStorage.setItem("lastTestQuestionIds", JSON.stringify(ids));
-        }
-      })
-      .catch((err) => console.error("Error fetching questions:", err));
-      }
+          if (type !== "practice") {
+            const ids = shuffled.map(q => q.id);
+            localStorage.setItem("lastTestQuestionIds", JSON.stringify(ids));
+          }
+        })
+        .catch((err) => console.error("Error fetching questions:", err));
+    }
 
-  }, [isLoaded, isSignedIn, user, selectedTopics,isRetest, type]);
+  }, [isLoaded, isSignedIn, user, selectedTopics, isRetest, type]);
 
   const searchParams = useSearchParams();
 
@@ -66,19 +66,19 @@ const Question = (props) => {
     setIsRetest(retest === "true");
     if (retest) {
       console.log("Retest mode enabled");
-        const storedIds = JSON.parse(localStorage.getItem("lastTestQuestionIds") || "[]");
-        console.log("Stored Question IDs for Retest:", storedIds);
-        if (storedIds.length > 0) {
-          fetch(`/api/question-by-ids`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ids: storedIds })
-          })
-            .then(res => res.json())
-            .then(data => setQuestions(data))
-            .catch(err => console.error("Error fetching retest questions:", err));
-        }
-        return;
+      const storedIds = JSON.parse(localStorage.getItem("lastTestQuestionIds") || "[]");
+      console.log("Stored Question IDs for Retest:", storedIds);
+      if (storedIds.length > 0) {
+        fetch(`/api/question-by-ids`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: storedIds })
+        })
+          .then(res => res.json())
+          .then(data => setQuestions(data))
+          .catch(err => console.error("Error fetching retest questions:", err));
+      }
+      return;
     }
     setType(queryType);
     setStopwatch(sw);
@@ -202,7 +202,7 @@ const Question = (props) => {
     localStorage.setItem("correctQuestions", correctQuestions);
     localStorage.setItem("incorrectQuestions", incorrectQuestions);
     router.push(
-      `/Result?score=${score}&incorrectCount=${incorrectCount}&correctCount=${correctCount}&type=${type}`
+      `/result?score=${score}&incorrectCount=${incorrectCount}&correctCount=${correctCount}&type=${type}`
     );
   }
 
