@@ -25,6 +25,7 @@ const Question = (props) => {
   const { isLoaded, isSignedIn, user } = useUser();
   const { selectedTopics } = useContext(SelectedTopicsContext);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [isRetest, setIsRetest] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +33,8 @@ const Question = (props) => {
     const topicIds = Object.keys(selectedTopics).filter(
       (id) => selectedTopics[id]
     );
+
+    if (!isRetest) {
     const queryParams = new URLSearchParams();
     queryParams.append("userId", user.id);
     topicIds.forEach((id) => queryParams.append("topicId", id));
@@ -43,15 +46,40 @@ const Question = (props) => {
       .then((data) => {
         const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, 50);
         setQuestions(shuffled);
+
+        if (type !== "practice") {
+          const ids = shuffled.map(q => q.id);
+          localStorage.setItem("lastTestQuestionIds", JSON.stringify(ids));
+        }
       })
       .catch((err) => console.error("Error fetching questions:", err));
-  }, [isLoaded, isSignedIn, user, selectedTopics]);
+      }
+
+  }, [isLoaded, isSignedIn, user, selectedTopics,isRetest, type]);
 
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const queryType = searchParams.get("type");
     const sw = searchParams.get("stopwatch");
+    const retest = searchParams.get("retest");
+    setIsRetest(retest === "true");
+    if (retest) {
+      console.log("Retest mode enabled");
+        const storedIds = JSON.parse(localStorage.getItem("lastTestQuestionIds") || "[]");
+        console.log("Stored Question IDs for Retest:", storedIds);
+        if (storedIds.length > 0) {
+          fetch(`/api/question-by-ids`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: storedIds })
+          })
+            .then(res => res.json())
+            .then(data => setQuestions(data))
+            .catch(err => console.error("Error fetching retest questions:", err));
+        }
+        return;
+    }
     setType(queryType);
     setStopwatch(sw);
   }, [searchParams]);
@@ -174,7 +202,7 @@ const Question = (props) => {
     localStorage.setItem("correctQuestions", correctQuestions);
     localStorage.setItem("incorrectQuestions", incorrectQuestions);
     router.push(
-      `/result?score=${score}&incorrectCount=${incorrectCount}&correctCount=${correctCount}`
+      `/Result?score=${score}&incorrectCount=${incorrectCount}&correctCount=${correctCount}&type=${type}`
     );
   }
 

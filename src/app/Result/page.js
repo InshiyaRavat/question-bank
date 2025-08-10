@@ -1,5 +1,6 @@
 'use client';
 import { THEME } from '@/theme';
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from 'react';
 
 export default function Result() {
@@ -8,6 +9,9 @@ export default function Result() {
   const [incorrect, setIncorrect] = useState(0);
   const [correctQuestions, setCorrectQuestions] = useState([]);
   const [incorrectQuestions, setIncorrectQuestions] = useState([]);
+  const [retestOption, setRetestOption] = useState(false);
+  const [type, setType] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -15,6 +19,7 @@ export default function Result() {
     setScore(parseInt(params.get('score') || '0'));
     setCorrect(parseInt(params.get('correctCount') || '0'));
     setIncorrect(parseInt(params.get('incorrectCount') || '0'));
+    setType(params.get('type'));
 
     setCorrectQuestions(() => {
       const stored = localStorage.getItem('correctQuestions');
@@ -28,6 +33,10 @@ export default function Result() {
   }, []);
 
   const percentage = ((score / 50) * 100).toFixed(2);
+
+  const handleRetest = () => {
+    router.push(`/Questions?type=${type}&retest=true`);
+  }
 
   return (
     <div className={`flex items-center justify-center min-h-screen bg-blue-200 p-6`}>
@@ -116,6 +125,15 @@ export default function Result() {
         >
           Go to Home
         </button>
+
+        {type != 'practice' && (
+          <button
+            className={`mt-4 px-6 py-3 bg-[${THEME.secondary_5}] text-white rounded-lg font-semibold hover:bg-[${THEME.secondary_6}] transition shadow-md`}
+            onClick={handleRetest}
+          >
+            Retest
+          </button>
+        )}
       </div>
     </div>
   );
