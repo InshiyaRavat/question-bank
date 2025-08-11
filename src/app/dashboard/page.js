@@ -2,6 +2,7 @@
 import PerformanceOverview from '../../components/PerformanceOverview';
 import UpcomingTestReminders from '../../components/UpcomingTestReminders';
 import RecentActivityLogs from '../../components/RecentActivityLogs';
+import UserAnalytics from '../../components/UserAnalytics';
 import UserSidebar from '../../components/UserSidebar';
 import React from 'react';
 
@@ -19,6 +20,7 @@ export default function DashboardPage() {
           <div className="md:col-span-2 flex flex-col gap-8">
             <PerformanceOverview />
             <UpcomingTestReminders />
+            <UserAnalytics />
           </div>
           <div>
             <RecentActivityLogs />
