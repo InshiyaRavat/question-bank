@@ -3,15 +3,14 @@ import PerformanceOverview from '../../components/PerformanceOverview';
 import UpcomingTestReminders from '../../components/UpcomingTestReminders';
 import RecentActivityLogs from '../../components/RecentActivityLogs';
 import UserSidebar from '../../components/UserSidebar';
-import React, { useState } from 'react';
+import React from 'react';
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState(null);
   return (
     <div className="flex h-screen bg-white w-full">
       {/* Sidebar */}
       <div className="w-64 flex-shrink-0 h-full">
-        <UserSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <UserSidebar />
       </div>
       {/* Main Content Area */}
       <div className="flex-1 min-h-screen flex flex-col">

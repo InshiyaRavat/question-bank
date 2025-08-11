@@ -1,19 +1,18 @@
 "use client";
 import Topics from "@/components/TopicList/Topics";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { AttemptedQuestionContext } from "@/context/AttemptedQuestionContext";
 import Mode from "@/components/TopicList/Mode";
 import UserSidebar from "@/components/UserSidebar";
 
 export default function QuestionTopic() {
   const { totalQuestions } = useContext(AttemptedQuestionContext);
-  const [activeTab, setActiveTab] = useState(null);
 
   return (
     <div className="flex h-screen bg-white w-full">
       {/* Sidebar */}
       <div className="w-64 flex-shrink-0 h-full">
-        <UserSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <UserSidebar />
       </div>
       {/* Main Content Area */}
       <div className="flex-1 min-h-screen flex flex-col">
