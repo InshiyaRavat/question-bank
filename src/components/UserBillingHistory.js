@@ -100,7 +100,7 @@ export default function UserBillingHistory() {
         <div className="text-center py-8">
           <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500">No subscription found</p>
-          <p className="text-sm text-gray-400">You haven't subscribed to any plans yet.</p>
+          <p className="text-sm text-gray-400">You haven&apos;t subscribed to any plans yet.</p>
         </div>
       ) : (
         <div className="space-y-6">
