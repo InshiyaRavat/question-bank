@@ -22,7 +22,7 @@ export default function DashboardPage() {
             <UpcomingTestReminders />
             <UserAnalytics />
           </div>
-          <div>
+          <div className="flex flex-col gap-8">
             <RecentActivityLogs />
           </div>
         </div>

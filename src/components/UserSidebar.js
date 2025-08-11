@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, CreditCard } from "lucide-react";
+import { LayoutDashboard, BookOpen, CreditCard, History } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarHeader } from "@/components/ui/sidebar";
 
@@ -10,6 +10,7 @@ const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Question Topics", url: "/question-topic", icon: BookOpen },
   { title: "Subscription", url: "/subscription", icon: CreditCard },
+  { title: "Billing History", url: "/billing-history", icon: History },
 ];
 
 export default function UserSidebar() {
