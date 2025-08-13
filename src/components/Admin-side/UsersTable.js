@@ -28,6 +28,9 @@ export default function UsersTable() {
   const [order, setOrder] = useState("desc");
   const [limit, setLimit] = useState(20);
   const [offset, setOffset] = useState(0);
+  const [plan, setPlan] = useState("all"); // all | 6 | 12 | none
+  const [accuracyMin, setAccuracyMin] = useState(""); // 0-100
+  const [accuracyMax, setAccuracyMax] = useState(""); // 0-100
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedUserData, setSelectedUserData] = useState(null);
   const [history, setHistory] = useState(null);
@@ -45,6 +48,9 @@ export default function UsersTable() {
         limit: String(limit),
         offset: String(offset),
       });
+      if (plan && plan !== "all") params.set("plan", plan);
+      if (accuracyMin !== "" && !Number.isNaN(Number(accuracyMin))) params.set("accuracyMin", String(accuracyMin));
+      if (accuracyMax !== "" && !Number.isNaN(Number(accuracyMax))) params.set("accuracyMax", String(accuracyMax));
       const res = await fetch(`/api/admin/users?${params.toString()}`);
       const data = await res.json();
       setUsers(data.users || []);
@@ -59,7 +65,7 @@ export default function UsersTable() {
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, sortBy, order, limit, offset]);
+  }, [query, sortBy, order, limit, offset, plan, accuracyMin, accuracyMax]);
 
   const onViewHistory = async (user) => {
     setSelectedUser(user.id);
@@ -109,8 +115,8 @@ export default function UsersTable() {
         {/* User Details Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="progress">Progress Overview</TabsTrigger>
-            <TabsTrigger value="history">Test History</TabsTrigger>
+            <TabsTrigger value="progress" className='!text-gray-700'>Progress Overview</TabsTrigger>
+            <TabsTrigger value="history" className='!text-gray-700'>Test History</TabsTrigger>
           </TabsList>
 
           <TabsContent value="progress" className="mt-6">
@@ -193,6 +199,43 @@ export default function UsersTable() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Plan Filter */}
+            <div className="flex gap-2 items-center">
+              <Select value={plan} onValueChange={setPlan}>
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="Plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Plans</SelectItem>
+                  <SelectItem value="6">6 Months</SelectItem>
+                  <SelectItem value="12">12 Months</SelectItem>
+                  <SelectItem value="none">No Plan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Performance Filter */}
+            <div className="flex gap-2 items-center">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                placeholder="Accuracy min %"
+                value={accuracyMin}
+                onChange={(e) => setAccuracyMin(e.target.value)}
+                className="w-[140px]"
+              />
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                placeholder="Max %"
+                value={accuracyMax}
+                onChange={(e) => setAccuracyMax(e.target.value)}
+                className="w-[100px]"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -215,6 +258,8 @@ export default function UsersTable() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Username</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Accuracy</TableHead>
                   <TableHead>Date of Birth</TableHead>
                   <TableHead>Registered</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -223,7 +268,7 @@ export default function UsersTable() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       <div className="flex items-center justify-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                         Loading users...
@@ -234,7 +279,7 @@ export default function UsersTable() {
 
                 {!loading && users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       <div className="text-center">
                         <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">No users found</p>
@@ -259,6 +304,16 @@ export default function UsersTable() {
                         ) : (
                           "-"
                         )}
+                      </TableCell>
+                      <TableCell>
+                        {user.planDuration ? (
+                          <Badge variant="secondary">{user.planDuration} mo</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {typeof user.accuracy === "number" ? `${user.accuracy}%` : <span className="text-muted-foreground">-</span>}
                       </TableCell>
                       <TableCell>{user.birthday || "-"}</TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
