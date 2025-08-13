@@ -25,6 +25,7 @@ export default function AdminSubscriptionsPage() {
   const [loading, setLoading] = useState(true);
   const [paymentLogsLoading, setPaymentLogsLoading] = useState(false);
   const [refundingPayment, setRefundingPayment] = useState(null);
+  const [timeGranularity, setTimeGranularity] = useState("monthly"); // monthly | yearly
 
   // Fetch subscription statistics
   const fetchStats = async () => {
@@ -150,8 +151,8 @@ export default function AdminSubscriptionsPage() {
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overview">Subscription Stats</TabsTrigger>
-          <TabsTrigger value="payments">Payment Logs</TabsTrigger>
+          <TabsTrigger value="overview" className='!text-gray-700'>Subscription Stats</TabsTrigger>
+          <TabsTrigger value="payments" className='!text-gray-700'>Payment Logs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -206,6 +207,50 @@ export default function AdminSubscriptionsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Subscriptions Over Time</CardTitle>
+                    <CardDescription>Monthly or yearly subscriptions</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className={`px-3 py-1 rounded-md border ${timeGranularity === "monthly" ? "bg-gray-900 text-white" : "bg-white"}`}
+                      onClick={() => setTimeGranularity("monthly")}
+                    >
+                      Monthly
+                    </button>
+                    <button
+                      className={`px-3 py-1 rounded-md border ${timeGranularity === "yearly" ? "bg-gray-900 text-white" : "bg-white"}`}
+                      onClick={() => setTimeGranularity("yearly")}
+                    >
+                      Yearly
+                    </button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {(timeGranularity === "monthly" ? stats?.charts.subscriptionsByMonth : stats?.charts.subscriptionsByYear)?.map((row) => {
+                    const label = timeGranularity === "monthly" ? new Date(row.month).toLocaleDateString(undefined, { year: "2-digit", month: "short" }) : new Date(row.year).getFullYear();
+                    const count = row.count;
+                    const denom = Math.max(1, (timeGranularity === "monthly" ? stats?.overview?.totalSubscriptions : stats?.overview?.totalSubscriptions));
+                    const width = Math.max(20, (count / denom) * 300);
+                    return (
+                      <div key={String(label)} className="flex items-center justify-between">
+                        <span className="text-sm font-medium w-24">{label}</span>
+                        <div className="flex-1 mx-3">
+                          <div className="h-2 rounded-full bg-blue-500" style={{ width: `${width}px` }} />
+                        </div>
+                        <span className="text-sm text-muted-foreground w-10 text-right">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Subscriptions by Duration</CardTitle>
                 <CardDescription>Distribution of subscription plans</CardDescription>
               </CardHeader>
@@ -216,10 +261,8 @@ export default function AdminSubscriptionsPage() {
                       <span className="text-sm font-medium">{item.label}</span>
                       <div className="flex items-center space-x-2">
                         <div
-                          className="h-2 rounded-full bg-blue-500"
-                          style={{
-                            width: `${Math.max(20, (item.count / stats.overview.totalSubscriptions) * 200)}px`,
-                          }}
+                          className="h-2 rounded-full bg-green-500"
+                          style={{ width: `${Math.max(20, (item.count / stats.overview.totalSubscriptions) * 200)}px` }}
                         />
                         <span className="text-sm text-muted-foreground">{item.count}</span>
                       </div>
@@ -228,35 +271,51 @@ export default function AdminSubscriptionsPage() {
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue by Plan</CardTitle>
-                <CardDescription>Revenue breakdown by subscription duration</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {stats?.charts.revenueByDuration?.map((item) => (
-                    <div key={item.duration} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{item.duration === 6 ? "6 Months" : "12 Months"}</span>
-                      <div className="flex items-center space-x-2">
-                        <div
-                          className="h-2 rounded-full bg-green-500"
-                          style={{
-                            width: `${Math.max(
-                              20,
-                              (item.estimatedRevenue / stats.overview.totalEstimatedRevenue) * 200
-                            )}px`,
-                          }}
-                        />
-                        <span className="text-sm text-muted-foreground">£{item.estimatedRevenue}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
+
+          {/* Detailed series table */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Detailed {timeGranularity === "monthly" ? "Monthly" : "Yearly"} Stats</CardTitle>
+                <CardDescription>Totals, active/expired, plan split, and est. revenue</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left">
+                      <th className="px-3 py-2">Period</th>
+                      <th className="px-3 py-2">Total</th>
+                      <th className="px-3 py-2">Active</th>
+                      <th className="px-3 py-2">Expired</th>
+                      <th className="px-3 py-2">6 mo</th>
+                      <th className="px-3 py-2">12 mo</th>
+                      <th className="px-3 py-2">Est. Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(timeGranularity === "monthly" ? stats?.series?.monthly : stats?.series?.yearly)?.map((row) => (
+                      <tr key={row.period} className="border-t">
+                        <td className="px-3 py-2">
+                          {timeGranularity === "monthly"
+                            ? new Date(row.period).toLocaleDateString(undefined, { year: "numeric", month: "long" })
+                            : new Date(row.period).getFullYear()}
+                        </td>
+                        <td className="px-3 py-2">{row.total}</td>
+                        <td className="px-3 py-2">{row.active}</td>
+                        <td className="px-3 py-2">{row.expired}</td>
+                        <td className="px-3 py-2">{row.duration6}</td>
+                        <td className="px-3 py-2">{row.duration12}</td>
+                        <td className="px-3 py-2">£{row.estimatedRevenue}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Recent Activity */}
           <Card>
@@ -266,10 +325,10 @@ export default function AdminSubscriptionsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {stats?.recentActivity?.map((sub) => (
+                  {stats?.recentActivity?.map((sub) => (
                   <div key={sub.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">User ID: {sub.userId}</p>
+                        <p className="text-sm font-medium">User: {sub.username || sub.userId}</p>
                       <p className="text-xs text-muted-foreground">
                         {sub.duration} months • {new Date(sub.subscribedAt).toLocaleDateString()}
                       </p>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import Stripe from "stripe";
+import { clerkClient } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -15,7 +16,10 @@ export async function GET() {
       activeSubscriptions,
       expiredSubscriptions,
       subscriptionsByMonth,
+      subscriptionsByYear,
       subscriptionsByDuration,
+      seriesMonthlyRaw,
+      seriesYearlyRaw,
     ] = await Promise.all([
       // Total subscriptions
       prisma.subscription.count(),
@@ -41,12 +45,53 @@ export async function GET() {
         ORDER BY month DESC
       `,
 
+      // Subscriptions by year (last 10 years)
+      prisma.$queryRaw`
+        SELECT 
+          DATE_TRUNC('year', subscribed_at) as year,
+          COUNT(*) as count
+        FROM "Subscription"
+        WHERE subscribed_at >= NOW() - INTERVAL '10 years'
+        GROUP BY DATE_TRUNC('year', subscribed_at)
+        ORDER BY year DESC
+      `,
+
       // Subscriptions by duration
       prisma.subscription.groupBy({
         by: ["duration"],
         _count: { duration: true },
         orderBy: { duration: "asc" },
       }),
+
+      // Detailed monthly series (last 12 months)
+      prisma.$queryRaw`
+        SELECT 
+          DATE_TRUNC('month', subscribed_at) AS bucket,
+          COUNT(*) AS total,
+          SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+          SUM(CASE WHEN status <> 'active' THEN 1 ELSE 0 END) AS expired,
+          SUM(CASE WHEN duration = 6 THEN 1 ELSE 0 END) AS d6,
+          SUM(CASE WHEN duration = 12 THEN 1 ELSE 0 END) AS d12
+        FROM "Subscription"
+        WHERE subscribed_at >= NOW() - INTERVAL '12 months'
+        GROUP BY 1
+        ORDER BY bucket DESC
+      `,
+
+      // Detailed yearly series (last 10 years)
+      prisma.$queryRaw`
+        SELECT 
+          DATE_TRUNC('year', subscribed_at) AS bucket,
+          COUNT(*) AS total,
+          SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+          SUM(CASE WHEN status <> 'active' THEN 1 ELSE 0 END) AS expired,
+          SUM(CASE WHEN duration = 6 THEN 1 ELSE 0 END) AS d6,
+          SUM(CASE WHEN duration = 12 THEN 1 ELSE 0 END) AS d12
+        FROM "Subscription"
+        WHERE subscribed_at >= NOW() - INTERVAL '10 years'
+        GROUP BY 1
+        ORDER BY bucket DESC
+      `,
     ]);
 
     // Get recent subscription activity
@@ -61,6 +106,31 @@ export async function GET() {
         subscribedAt: true,
       },
     });
+
+    // Attach usernames for recent subscriptions
+    let recentActivity = recentSubscriptions;
+    try {
+      const uniqueUserIds = Array.from(new Set(recentSubscriptions.map((s) => s.userId)));
+      const clerk = await clerkClient();
+      const users = await Promise.all(
+        uniqueUserIds.map((uid) => clerk.users.getUser(uid).catch(() => null))
+      );
+      const idToUsername = new Map(
+        users
+          .filter(Boolean)
+          .map((u) => [
+            u.id,
+            u.username || `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.emailAddresses?.[0]?.emailAddress || u.id,
+          ])
+      );
+      recentActivity = recentSubscriptions.map((s) => ({
+        ...s,
+        username: idToUsername.get(s.userId) || s.userId,
+      }));
+    } catch (_e) {
+      // If Clerk lookup fails, fall back silently to userId
+      recentActivity = recentSubscriptions.map((s) => ({ ...s, username: s.userId }));
+    }
 
     // Calculate estimated revenue based on subscription data
     const revenueByDuration = subscriptionsByDuration.map((item) => ({
@@ -86,6 +156,34 @@ export async function GET() {
       console.warn("Could not fetch Stripe data:", stripeError.message);
     }
 
+    const monthlySeries = seriesMonthlyRaw.map((row) => {
+      const d6 = Number(row.d6) || 0;
+      const d12 = Number(row.d12) || 0;
+      return {
+        period: row.bucket,
+        total: Number(row.total) || 0,
+        active: Number(row.active) || 0,
+        expired: Number(row.expired) || 0,
+        duration6: d6,
+        duration12: d12,
+        estimatedRevenue: d6 * 10 + d12 * 15,
+      };
+    });
+
+    const yearlySeries = seriesYearlyRaw.map((row) => {
+      const d6 = Number(row.d6) || 0;
+      const d12 = Number(row.d12) || 0;
+      return {
+        period: row.bucket,
+        total: Number(row.total) || 0,
+        active: Number(row.active) || 0,
+        expired: Number(row.expired) || 0,
+        duration6: d6,
+        duration12: d12,
+        estimatedRevenue: d6 * 10 + d12 * 15,
+      };
+    });
+
     const stats = {
       overview: {
         totalSubscriptions,
@@ -99,6 +197,10 @@ export async function GET() {
           month: row.month,
           count: parseInt(row.count),
         })),
+        subscriptionsByYear: subscriptionsByYear.map((row) => ({
+          year: row.year,
+          count: parseInt(row.count),
+        })),
         subscriptionsByDuration: subscriptionsByDuration.map((item) => ({
           duration: item.duration,
           count: item._count.duration,
@@ -106,7 +208,11 @@ export async function GET() {
         })),
         revenueByDuration,
       },
-      recentActivity: recentSubscriptions,
+      series: {
+        monthly: monthlySeries,
+        yearly: yearlySeries,
+      },
+      recentActivity,
       stripePayments: stripePayments.slice(0, 10).map((payment) => ({
         id: payment.id,
         amount: payment.amount / 100,
