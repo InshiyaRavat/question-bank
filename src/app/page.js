@@ -35,14 +35,14 @@ export default function Home() {
         const data = await response.json();
         console.log("subscription data: ", data.subscription);
         if (data.subscription) {
-          if (data.subscription.status == "active") {
+          if (data.subscription.status === "active") {
             router.push("/question-topic");
           }
         } else {
           console.log("user has not subscribed");
         }
 
-        console.log("status: ", data.subscription.status);
+        console.log("status: ", data.subscription?.status);
       } catch (error) {
         console.log("error occured while fetching subscription status: ", error);
       }

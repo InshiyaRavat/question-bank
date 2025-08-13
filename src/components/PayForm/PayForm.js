@@ -45,27 +45,32 @@ const PayForm = () => {
             } else {
                 const subscriptionResponse = await fetch(`/api/subscription?userid=${user.id}`);
                 const subscriptionData = await subscriptionResponse.json();
-
                 const months = plan == 10 ? 6 : 12;
 
-                if (!subscriptionData.ok) {
-                    const newSubscriber = await fetch(`/api/subscription`, {
+                if (!subscriptionData.success || !subscriptionData.subscription) {
+                    // Create new subscription
+                    const createRes = await fetch(`/api/subscription`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            userid: user.id,
-                            status: 'active',
-                            duration: months,
-                        }),
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userid: user.id, status: 'active', duration: months }),
                     });
-
-                    if (newSubscriber.ok) {
-                        console.log("New subscriber added successfully");
-                    } else {
-                        console.log("Error while adding new subscriber");
+                    if (!createRes.ok) console.log("Error while adding new subscriber");
+                } else {
+                    // If user already has a subscription, extend or reactivate
+                    const sub = subscriptionData.subscription;
+                    const now = new Date();
+                    let newStart = new Date(sub.subscribedAt);
+                    // If expired or inactive, restart from now; else extend from current expiry
+                    const currentExpiry = new Date(newStart);
+                    currentExpiry.setMonth(currentExpiry.getMonth() + (sub.duration || 0));
+                    if (now > currentExpiry || sub.status !== 'active') {
+                        newStart = now;
                     }
+                    await fetch(`/api/subscription/${sub.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'active', duration: months, subscribedAt: newStart.toISOString() }),
+                    });
                 }
 
                 console.log('payment successfull')
