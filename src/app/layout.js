@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./loading.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { PlanProvider } from "@/context/PlanContext";
 import { AttemptedQuestionProvider } from "@/context/AttemptedQuestionContext";
