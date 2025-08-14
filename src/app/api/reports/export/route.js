@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
-import PDFDocument from "pdfkit";
 import * as XLSX from "xlsx";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Helper to stream PDF
-function streamPdf(doc) {
+// Build a PDF and return a Buffer. Listeners are attached BEFORE writing.
+async function buildPdfBuffer(PDFDocumentCtor, buildFn) {
+  const doc = new PDFDocumentCtor({ size: "A4", margin: 40 });
   const chunks = [];
   return new Promise((resolve, reject) => {
     doc.on("data", (chunk) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
-    doc.end();
+    try {
+      buildFn(doc);
+      doc.end();
+    } catch (e) {
+      reject(e);
+    }
   });
 }
 
@@ -49,22 +54,23 @@ export async function POST(req) {
     }
 
     if (type === "pdf") {
-      const doc = new PDFDocument({ size: "A4", margin: 40 });
-      doc.fontSize(18).text(title || "Report", { align: "center" });
-      doc.moveDown();
-      doc.fontSize(10);
-
-      // Table headers
-      if (headers.length) {
-        doc.text(headers.join("  |  "));
-        doc.moveDown(0.5);
-      }
-      // Rows
-      for (const row of rows) {
-        doc.text(row.map((c) => (c ?? "").toString()).join("  |  "));
-      }
-
-      const buffer = await streamPdf(doc);
+      // Lazy-load pdfkit and handle both CJS/ESM shapes
+      const mod = await import("pdfkit");
+      const PDFDocument = mod.default || mod;
+      const buffer = await buildPdfBuffer(PDFDocument, (doc) => {
+        doc.fontSize(18).text(title || "Report", { align: "center" });
+        doc.moveDown();
+        doc.fontSize(10);
+        // Table headers
+        if (headers.length) {
+          doc.text(headers.join("  |  "));
+          doc.moveDown(0.5);
+        }
+        // Rows
+        for (const row of rows) {
+          doc.text(row.map((c) => (c ?? "").toString()).join("  |  "));
+        }
+      });
       return new Response(buffer, {
         status: 200,
         headers: {

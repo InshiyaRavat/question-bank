@@ -1,12 +1,13 @@
-import * as React from "react"
+"use client";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
-import { cn } from "@/lib/utils"
+function Input({ className, type, ...props }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-function Input({
-  className,
-  type,
-  ...props
-}) {
+  if (!mounted) return null;
+
   return (
     <input
       type={type}
@@ -17,8 +18,9 @@ function Input({
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-export { Input }
+export { Input };
