@@ -28,7 +28,7 @@ const AdminQuestionList = ({ searchTerm }) => {
 
   // Add question form states
   const [newQuestion, setNewQuestion] = useState("");
-  const [newOptions, setNewOptions] = useState(["", "", "", ""]);
+  const [newOptions, setNewOptions] = useState(["", "", "", "", ""]);
   const [newCorrectAnswer, setNewCorrectAnswer] = useState("");
   const [newSelectedTopic, setNewSelectedTopic] = useState("");
 
@@ -343,9 +343,8 @@ const AdminQuestionList = ({ searchTerm }) => {
                   disabled={newOptions.every((opt) => opt.trim() === "")}
                 >
                   <SelectTrigger
-                    className={`w-full ${
-                      newOptions.every((opt) => opt.trim() === "") ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+                    className={`w-full ${newOptions.every((opt) => opt.trim() === "") ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     style={{
                       borderColor: THEME.neutral300,
                       backgroundColor: THEME.white,

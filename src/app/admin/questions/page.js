@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { Search } from "lucide-react";
 import AdminQuestionList from "@/components/Admin-side/AdminQuestionList";
-import UsersTable from "@/components/Admin-side/UsersTable";
 
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
