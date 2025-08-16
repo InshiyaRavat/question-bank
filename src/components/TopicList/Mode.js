@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { Button } from "../ui/button";
 
 const Mode = () => {
   const [isTest, setIsTest] = useState(false);
@@ -45,8 +46,8 @@ const Mode = () => {
             />
             <span
               className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all ${isTest === (index === 1)
-                  ? "bg-[#0A9396] text-white"
-                  : "bg-[#E9D8A6] text-[#001219] hover:bg-[#CA6702]/90"
+                ? "bg-[#0A9396] text-white"
+                : "bg-[#E9D8A6] text-[#001219] hover:bg-[#CA6702]/90"
                 }`}
             >
               {mode}
@@ -82,8 +83,8 @@ const Mode = () => {
               />
               <span
                 className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all ${isTimed === (index === 0)
-                    ? "bg-[#EE9B00] text-white"
-                    : "bg-[#E9D8A6] text-[#001219] hover:bg-[#CA6702]/90"
+                  ? "bg-[#EE9B00] text-white"
+                  : "bg-[#E9D8A6] text-[#001219] hover:bg-[#CA6702]/90"
                   }`}
               >
                 {type}
@@ -95,12 +96,12 @@ const Mode = () => {
 
       {/* Start Button */}
       <div className="w-full sm:w-auto">
-        <button
+        <Button suppressHydrationWarning
           onClick={handleClick}
           className="w-full sm:w-auto bg-[#BB3E03] hover:bg-[#AE2012] text-white text-sm font-semibold py-2 px-6 rounded-full shadow-sm transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#CA6702]"
         >
           🚀 Start
-        </button>
+        </Button>
       </div>
     </div>
   );

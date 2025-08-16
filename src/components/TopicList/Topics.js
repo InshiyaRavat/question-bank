@@ -124,6 +124,7 @@ const Topics = () => {
       {/* Search Bar */}
       <div className="flex justify-center">
         <input
+          suppressHydrationWarning
           type="text"
           placeholder="🔍 Search Topics..."
           className="w-full sm:w-2/3 px-4 py-2 border border-[#005F73] rounded-full focus:outline-none focus:ring-2 focus:ring-[#0A9396] shadow-sm"
