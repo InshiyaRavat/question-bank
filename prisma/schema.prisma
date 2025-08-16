@@ -66,6 +66,19 @@ model Subject {
   topics Topic[]
 }
 
+model Refund {
+  id              Int      @id @default(autoincrement())
+  stripeRefundId  String   @unique @map("stripe_refund_id")
+  stripePaymentId String   @map("stripe_payment_id")
+  userId          String?  @map("user_id")
+  amount          Float
+  reason          String
+  status          String
+  subscriptionId  Int?     @map("subscription_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  processedBy     String?  @map("processed_by") // Admin who processed the refund
+}
+
 model Subscription {
   id           Int      @id @default(autoincrement())
   userId       String   @map("user_id")

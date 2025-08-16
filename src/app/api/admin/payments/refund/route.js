@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import Stripe from "stripe";
+import { clerkClient } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -15,6 +16,10 @@ export async function POST(req) {
     if (!stripePaymentId) {
       return NextResponse.json({ success: false, error: "Stripe payment ID required" }, { status: 400 });
     }
+
+    // Validate refund reason - must be one of Stripe's accepted values
+    const validReasons = ["duplicate", "fraudulent", "requested_by_customer"];
+    const refundReason = reason && validReasons.includes(reason) ? reason : "requested_by_customer";
 
     // Get the payment intent from Stripe
     const paymentIntent = await stripe.paymentIntents.retrieve(stripePaymentId);
@@ -31,7 +36,7 @@ export async function POST(req) {
     const refund = await stripe.refunds.create({
       payment_intent: stripePaymentId,
       amount: amount ? Math.round(amount * 100) : undefined, // Convert to cents
-      reason: reason || "requested_by_customer",
+      reason: refundReason,
     });
 
     // Try to find and update associated subscription
@@ -56,6 +61,33 @@ export async function POST(req) {
       });
     }
 
+    // Fetch username using Clerk (same logic as first code)
+    let username = null;
+    if (subscription?.userId) {
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(subscription.userId);
+        username = user.username || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.emailAddresses?.[0]?.emailAddress || subscription.userId;
+      } catch (_e) {
+        // If Clerk lookup fails, fall back to userId
+        username = subscription.userId;
+      }
+    }
+
+    // Log the refund in the database
+    const refundLog = await prisma.refund.create({
+      data: {
+        stripeRefundId: refund.id,
+        stripePaymentId: stripePaymentId,
+        userId: subscription?.userId || null,
+        amount: refund.amount / 100,
+        reason: refundReason,
+        status: refund.status,
+        subscriptionId: subscription?.id || null,
+        processedBy: "admin",
+      },
+    });
+
     return NextResponse.json({
       success: true,
       refund: {
@@ -63,13 +95,14 @@ export async function POST(req) {
         amount: refund.amount / 100,
         status: refund.status,
         paymentIntentId: stripePaymentId,
+        logId: refundLog.id,
       },
       subscription: subscription
         ? {
-            id: subscription.id,
-            status: "cancelled",
-            userId: subscription.userId,
-          }
+          id: subscription.id,
+          status: "cancelled",
+          username: username || "unknown",
+        }
         : null,
     });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import Stripe from "stripe";
+import { clerkClient } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -57,7 +58,7 @@ export async function GET(req) {
     const paginatedPayments = allPayments.slice(skip, skip + limit);
 
     // Get associated subscriptions for these payments
-    const paymentLogs = await Promise.all(
+    const subscriptionsWithPayments = await Promise.all(
       paginatedPayments.map(async (payment) => {
         // Try to find associated subscription by timing and amount
         const amount = payment.amount / 100;
@@ -75,26 +76,74 @@ export async function GET(req) {
         });
 
         return {
-          id: payment.id,
-          userId: subscription?.userId || "unknown",
-          subscriptionId: subscription?.id || null,
-          stripePaymentId: payment.id,
+          payment,
+          subscription,
           amount,
-          currency: payment.currency.toUpperCase(),
-          status: payment.status,
-          paymentMethod: payment.payment_method_types?.[0] || "card",
-          description: payment.description || `${amount === 10 ? "6-month" : "12-month"} subscription`,
-          createdAt: new Date(payment.created * 1000),
-          subscription: subscription
-            ? {
-                id: subscription.id,
-                status: subscription.status,
-                duration: subscription.duration,
-              }
-            : null,
+          paymentDate: new Date(payment.created * 1000),
         };
       })
     );
+
+    // Fetch usernames using Clerk (same logic as first code)
+    let paymentLogs = subscriptionsWithPayments.map(({ payment, subscription, amount, paymentDate }) => ({
+      id: payment.id,
+      userId: subscription?.userId || null,
+      subscriptionId: subscription?.id || null,
+      stripePaymentId: payment.id,
+      amount,
+      currency: payment.currency.toUpperCase(),
+      status: payment.status,
+      paymentMethod: payment.payment_method_types?.[0] || "card",
+      description: payment.description || `${amount === 10 ? "6-month" : "12-month"} subscription`,
+      createdAt: paymentDate,
+      subscription: subscription
+        ? {
+          id: subscription.id,
+          status: subscription.status,
+          duration: subscription.duration,
+        }
+        : null,
+    }));
+
+    // Attach usernames using the same logic as the first code
+    try {
+      const uniqueUserIds = Array.from(
+        new Set(
+          paymentLogs
+            .map((log) => log.userId)
+            .filter(Boolean) // Remove null/undefined userIds
+        )
+      );
+
+      if (uniqueUserIds.length > 0) {
+        const clerk = await clerkClient();
+        const users = await Promise.all(
+          uniqueUserIds.map((uid) => clerk.users.getUser(uid).catch(() => null))
+        );
+
+        const idToUsername = new Map(
+          users
+            .filter(Boolean)
+            .map((u) => [
+              u.id,
+              u.username || `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.emailAddresses?.[0]?.emailAddress || u.id,
+            ])
+        );
+
+        paymentLogs = paymentLogs.map((log) => ({
+          ...log,
+          username: log.userId ? (idToUsername.get(log.userId) || log.userId) : "unknown",
+        }));
+      } else {
+        paymentLogs = paymentLogs.map((log) => ({ ...log, username: "unknown" }));
+      }
+    } catch (_e) {
+      // If Clerk lookup fails, fall back silently to userId
+      paymentLogs = paymentLogs.map((log) => ({
+        ...log,
+        username: log.userId || "unknown",
+      }));
+    }
 
     // Calculate summary statistics
     const totalAmount = allPayments.filter((p) => p.status === "succeeded").reduce((sum, p) => sum + p.amount / 100, 0);

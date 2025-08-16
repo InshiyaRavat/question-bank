@@ -19,14 +19,14 @@ export default function UserSidebar() {
 
   return (
     <SidebarProvider>
-      <Sidebar className="bg-white border-r border-border min-h-screen w-64 flex flex-col">
-        <SidebarHeader className="flex flex-col items-center py-6">
-          <div className="text-2xl font-bold mb-2 text-primary">📚 Question Bank</div>
+      <Sidebar className="bg-white border-r border-border min-h-screen w-64 flex flex-col shadow-lg lg:shadow-none">
+        <SidebarHeader className="flex flex-col items-center py-4 lg:py-6 px-4">
+          <div className="text-xl lg:text-2xl font-bold mb-2 text-primary text-center">📚 Question Bank</div>
           <UserButton />
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="px-2 lg:px-0">
           <SidebarGroup>
-            <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
+            <SidebarGroupLabel className="px-2 lg:px-0">Main Navigation</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.map((item) => (
@@ -34,10 +34,11 @@ export default function UserSidebar() {
                     <SidebarMenuButton
                       asChild
                       isActive={pathname.startsWith(item.url)}
+                      className="rounded-lg mx-2 lg:mx-0"
                     >
-                      <Link href={item.url} className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        <span className="truncate">{item.title}</span>
+                      <Link href={item.url} className="flex items-center gap-3 px-3 py-2">
+                        <item.icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate text-sm lg:text-base">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

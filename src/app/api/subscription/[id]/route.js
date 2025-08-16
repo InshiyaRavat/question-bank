@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function PATCH(req, { params }) {
-  const { id } = params;
+  const { id } = await params;
   const body = await req.json();
   const { duration, subscribedAt, status } = body;
 

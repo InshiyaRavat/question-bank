@@ -7,10 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   BarChart3,
-  TrendingUp,
   Users,
   DollarSign,
-  Calendar,
   RefreshCw,
   AlertTriangle,
   CheckCircle,
@@ -18,14 +16,26 @@ import {
   XCircle,
 } from "lucide-react";
 import { THEME } from "@/theme";
+import RefundLogs from "@/components/Admin-side/RefundLogs";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 export default function AdminSubscriptionsPage() {
   const [stats, setStats] = useState(null);
   const [paymentLogs, setPaymentLogs] = useState(null);
+  const [refundLogs, setRefundLogs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paymentLogsLoading, setPaymentLogsLoading] = useState(false);
+  const [refundLogsLoading, setRefundLogsLoading] = useState(false);
   const [refundingPayment, setRefundingPayment] = useState(null);
   const [timeGranularity, setTimeGranularity] = useState("monthly"); // monthly | yearly
+  const { isLoaded, isSignedIn, user } = useUser();
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      setUsername(user.username || "");
+    }
+  }, [isLoaded, user, isSignedIn]);
 
   // Fetch subscription statistics
   const fetchStats = async () => {
@@ -58,22 +68,42 @@ export default function AdminSubscriptionsPage() {
     }
   };
 
+  // Fetch refund logs
+  const fetchRefundLogs = async (page = 1) => {
+    setRefundLogsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/refunds/logs?page=${page}&limit=20`);
+      const data = await response.json();
+      if (data.success) {
+        setRefundLogs(data.data);
+        console.log("refund logs: ", data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching refund logs:", error);
+    } finally {
+      setRefundLogsLoading(false);
+    }
+  };
+
   // Handle refund
-  const handleRefund = async (stripePaymentId, reason = "Admin refund") => {
-    if (!confirm("Are you sure you want to process this refund?")) return;
+  const handleRefund = async (stripePaymentId, reason = "requested_by_customer") => {
+    // Validate reason to match Stripe's accepted values
+    const validReasons = ["duplicate", "fraudulent", "requested_by_customer"];
+    const refundReason = validReasons.includes(reason) ? reason : "requested_by_customer";
 
     setRefundingPayment(stripePaymentId);
     try {
       const response = await fetch("/api/admin/payments/refund", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stripePaymentId, reason }),
+        body: JSON.stringify({ stripePaymentId, reason: refundReason }),
       });
 
       const data = await response.json();
       if (data.success) {
         alert("Refund processed successfully!");
-        fetchPaymentLogs(); // Refresh logs
+        fetchPaymentLogs(); // Refresh payment logs
+        fetchRefundLogs(); // Refresh refund logs
         fetchStats(); // Refresh stats
       } else {
         alert(`Refund failed: ${data.error}`);
@@ -88,6 +118,7 @@ export default function AdminSubscriptionsPage() {
   useEffect(() => {
     fetchStats();
     fetchPaymentLogs();
+    fetchRefundLogs();
   }, []);
 
   const getStatusIcon = (status) => {
@@ -136,23 +167,33 @@ export default function AdminSubscriptionsPage() {
           </h1>
           <p className="text-muted-foreground">Monitor subscription statistics and manage payments</p>
         </div>
-        <Button
-          onClick={() => {
-            fetchStats();
-            fetchPaymentLogs();
-          }}
-          variant="outline"
-          className='text-black cursor-pointer'
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh Data
-        </Button>
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center gap-3">
+            <UserButton />
+            <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
+              {username}
+            </span>
+          </div>
+          <Button
+            onClick={() => {
+              fetchStats();
+              fetchPaymentLogs();
+              fetchRefundLogs();
+            }}
+            variant="outline"
+            className="text-black cursor-pointer"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className='!text-gray-700'>Subscription Stats</TabsTrigger>
           <TabsTrigger value="payments" className='!text-gray-700'>Payment Logs</TabsTrigger>
+          <TabsTrigger value="refunds" className='!text-gray-700'>Refund Logs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -325,10 +366,10 @@ export default function AdminSubscriptionsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                  {stats?.recentActivity?.map((sub) => (
+                {stats?.recentActivity?.map((sub) => (
                   <div key={sub.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="space-y-1">
-                        <p className="text-sm font-medium">User: {sub.username || sub.userId}</p>
+                      <p className="text-sm font-medium">User: {sub.username || sub.userId}</p>
                       <p className="text-xs text-muted-foreground">
                         {sub.duration} months • {new Date(sub.subscribedAt).toLocaleDateString()}
                       </p>
@@ -382,7 +423,7 @@ export default function AdminSubscriptionsPage() {
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-3 text-left text-sm font-medium">Payment ID</th>
-                            <th className="px-4 py-3 text-left text-sm font-medium">User ID</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium">User Name</th>
                             <th className="px-4 py-3 text-left text-sm font-medium">Amount</th>
                             <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
                             <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
@@ -398,7 +439,7 @@ export default function AdminSubscriptionsPage() {
                                   <span className="text-sm font-mono">{log.stripePaymentId.slice(0, 20)}...</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-sm">{log.userId}</td>
+                              <td className="px-4 py-3 text-sm">{log.username}</td>
                               <td className="px-4 py-3">
                                 <span className="text-sm font-medium">
                                   £{log.amount.toFixed(2)} {log.currency}
@@ -432,6 +473,10 @@ export default function AdminSubscriptionsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="refunds" className="space-y-6">
+          <RefundLogs refundLogs={refundLogs} refundLogsLoading={refundLogsLoading} />
         </TabsContent>
       </Tabs>
     </div>
