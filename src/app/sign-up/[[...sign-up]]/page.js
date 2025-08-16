@@ -76,6 +76,7 @@ export default function Page() {
             }}
             routing="path"
             path="/sign-up"
+            afterSignOutUrl="/pay"
             signInUrl="/sign-in"
           />
         </div>

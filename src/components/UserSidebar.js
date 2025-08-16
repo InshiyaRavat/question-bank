@@ -9,8 +9,8 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupC
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Question Topics", url: "/question-topic", icon: BookOpen },
-  { title: "Subscription", url: "/subscription", icon: CreditCard },
   { title: "Reports", url: "/reports", icon: BarChart3 },
+  { title: "Subscription", url: "/subscription", icon: CreditCard },
   { title: "Billing History", url: "/billing-history", icon: History },
 ];
 
