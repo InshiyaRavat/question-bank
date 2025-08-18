@@ -338,7 +338,7 @@ export default function AdminCommentsPage() {
           </AlertDialogHeader>
           <div className="my-4 p-3 bg-gray-50 rounded-md border-l-4 border-red-500">
             <p className="text-sm text-gray-700 line-clamp-3">
-              "{commentToDelete?.comment}"
+              &quot;{commentToDelete?.comment}&quot;
             </p>
           </div>
           <AlertDialogFooter>
