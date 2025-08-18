@@ -1,4 +1,4 @@
-import { clerkClient } from "@clerk/nextjs/server";
+import { clerkClient, auth } from "@clerk/nextjs/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -70,6 +70,7 @@ export async function GET(req) {
         imageUrl: u.imageUrl || null,
         createdAt: u.createdAt,
         birthday,
+        role: (u && u.publicMetadata && u.publicMetadata.role) ? u.publicMetadata.role : "student",
         planDuration: null,
         accuracy: null,
       };
@@ -170,6 +171,213 @@ export async function GET(req) {
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: "Failed to fetch users" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+// POST /api/admin/users
+// Body: { action: "create" | "grant_admin" | "grant_student_free" | "remove", ...payload }
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    const { action } = body || {};
+
+    if (!action) {
+      return new Response(JSON.stringify({ error: "action is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const clerk = await clerkClient();
+
+    // Create a new user in Clerk, optionally set role, and optionally grant lifetime subscription
+    if (action === "create") {
+      const { email, password, username, firstName, lastName, role, grantLifetime } = body;
+
+      if (!email || !password) {
+        return new Response(JSON.stringify({ error: "email and password are required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const created = await clerk.users.createUser({
+        emailAddress: [email],
+        password,
+        username,
+        firstName,
+        lastName,
+        publicMetadata: {
+          role: role === "admin" ? "admin" : "student",
+        },
+      });
+
+      // Optionally grant lifetime subscription (treat as long duration, e.g., 1200 months ~ 100 years)
+      if (grantLifetime) {
+        await prisma.subscription.create({
+          data: {
+            userId: created.id,
+            status: "active",
+            duration: 1200,
+          },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, userId: created.id }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Grant admin role via Clerk metadata
+    if (action === "grant_admin") {
+      const { userId } = body;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "userId is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      await clerk.users.updateUser(userId, { publicMetadata: { role: "admin" } });
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Grant student role and free lifetime subscription (prevent demoting last admin)
+    if (action === "grant_student_free") {
+      const { userId } = body;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "userId is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      const target = await clerk.users.getUser(userId);
+      const targetRole = target && target.publicMetadata ? target.publicMetadata.role : undefined;
+      const targetIsAdmin = targetRole === "admin";
+
+      if (targetIsAdmin) {
+        // Count other admins besides target
+        let offset = 0;
+        let adminCountExcludingTarget = 0;
+        while (true) {
+          const { data } = await clerk.users.getUserList({ limit: 100, offset });
+          if (!data || data.length === 0) break;
+          for (const u of data) {
+            const role = u && u.publicMetadata ? u.publicMetadata.role : undefined;
+            if (role === "admin" && u.id !== userId) {
+              adminCountExcludingTarget += 1;
+              if (adminCountExcludingTarget >= 1) break;
+            }
+          }
+          if (adminCountExcludingTarget >= 1) break;
+          offset += data.length;
+          if (offset > 5000) break; // safety bound
+        }
+        if (adminCountExcludingTarget === 0) {
+          return new Response(
+            JSON.stringify({ error: "Cannot change role: this is the last admin." }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      }
+
+      await clerk.users.updateUser(userId, { publicMetadata: { role: "student" } });
+
+      await prisma.subscription.create({
+        data: {
+          userId,
+          status: "active",
+          duration: 1200,
+        },
+      });
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Remove user: delete DB records and Clerk user (prevent removing last admin; prevent self-removal if only admin)
+    if (action === "remove") {
+      const { userId } = body;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "userId is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const requester = auth();
+      const requesterId = requester?.userId || null;
+
+      // Check target role
+      const target = await clerk.users.getUser(userId);
+      const targetRole = target && target.publicMetadata ? target.publicMetadata.role : undefined;
+      const targetIsAdmin = targetRole === "admin";
+
+      if (targetIsAdmin) {
+        // Count admins besides target
+        let offset = 0;
+        let adminCountExcludingTarget = 0;
+        while (true) {
+          const { data } = await clerk.users.getUserList({ limit: 100, offset });
+          if (!data || data.length === 0) break;
+          for (const u of data) {
+            const role = u && u.publicMetadata ? u.publicMetadata.role : undefined;
+            if (role === "admin" && u.id !== userId) {
+              adminCountExcludingTarget += 1;
+              if (adminCountExcludingTarget >= 1) break;
+            }
+          }
+          if (adminCountExcludingTarget >= 1) break;
+          offset += data.length;
+          if (offset > 5000) break; // safety bound
+        }
+
+        if (adminCountExcludingTarget === 0) {
+          return new Response(
+            JSON.stringify({ error: "Cannot remove the last admin user." }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        // Optional: block self-delete if only admin (covered above). If more admins exist, allow.
+        if (requesterId && requesterId === userId && adminCountExcludingTarget === 0) {
+          return new Response(
+            JSON.stringify({ error: "You are the only admin and cannot remove yourself." }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      }
+
+      await prisma.$transaction([
+        prisma.subscription.deleteMany({ where: { userId } }),
+        prisma.attemptedQuestion.deleteMany({ where: { userId } }),
+        prisma.solvedQuestion.deleteMany({ where: { userId } }),
+        prisma.reply.deleteMany({ where: { userId } }),
+        prisma.comment.deleteMany({ where: { userId } }),
+      ]);
+
+      await clerk.users.deleteUser(userId);
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Unknown action" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Admin users POST error:", error);
+    return new Response(JSON.stringify({ error: "Failed to process request" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

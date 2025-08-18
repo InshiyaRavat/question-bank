@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Users, Eye, ChevronLeft, ChevronRight, Plus, Shield, Gift, Trash2 } from "lucide-react";
 import UserProgress from "./UserProgress";
 import TestHistory from "./TestHistory";
 import THEME from "@/theme";
@@ -37,6 +37,8 @@ export default function UsersTable() {
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("users");
+  const [creating, setCreating] = useState(false);
+  const [newUser, setNewUser] = useState({ email: "", password: "", username: "", firstName: "", lastName: "", role: "student", grantLifetime: false });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -60,6 +62,43 @@ export default function UsersTable() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const createUser = async () => {
+    if (!newUser.email || !newUser.password) return;
+    setCreating(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', ...newUser })
+      });
+      if (res.ok) {
+        setNewUser({ email: "", password: "", username: "", firstName: "", lastName: "", role: "student", grantLifetime: false });
+        fetchUsers();
+        alert('User created successfully');
+      } else {
+        alert('Failed to create user');
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const grantAdmin = async (userId) => {
+    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'grant_admin', userId }) });
+    fetchUsers();
+  };
+
+  const grantStudentFree = async (userId) => {
+    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'grant_student_free', userId }) });
+    fetchUsers();
+  };
+
+  const removeUser = async (userId) => {
+    if (!confirm('Remove this user? This will delete related data.')) return;
+    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', userId }) });
+    fetchUsers();
   };
 
   useEffect(() => {
@@ -236,6 +275,27 @@ export default function UsersTable() {
                 className="w-[100px]"
               />
             </div>
+            {/* Create User */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-3 items-center">
+              <Input placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
+              <Input placeholder="Password" type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+              <Input placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
+              <Select value={newUser.role} onValueChange={(v) => setNewUser({ ...newUser, role: v })}>
+                <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={newUser.grantLifetime} onChange={(e) => setNewUser({ ...newUser, grantLifetime: e.target.checked })} />
+                  Lifetime free
+                </label>
+                <Button size="sm" onClick={createUser} disabled={creating} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" /> Create
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -258,6 +318,7 @@ export default function UsersTable() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Username</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Accuracy</TableHead>
                   <TableHead>Date of Birth</TableHead>
@@ -306,6 +367,13 @@ export default function UsersTable() {
                         )}
                       </TableCell>
                       <TableCell>
+                        {user.role === 'admin' ? (
+                          <Badge className="bg-red-500 text-white">Admin</Badge>
+                        ) : (
+                          <Badge variant="outline" className='text-black'>User</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         {user.planDuration ? (
                           <Badge variant="secondary">{user.planDuration} mo</Badge>
                         ) : (
@@ -317,15 +385,18 @@ export default function UsersTable() {
                       </TableCell>
                       <TableCell>{user.birthday || "-"}</TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onViewHistory(user)}
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <Eye className="h-4 w-4" />
-                          View Details
+                      <TableCell className="text-right space-y-3">
+                        <Button variant="outline" size="sm" onClick={() => onViewHistory(user)} className="inline-flex items-center gap-2 cursor-pointer">
+                          <Eye className="h-4 w-4" /> View
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => grantAdmin(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                          <Shield className="h-4 w-4" /> Admin
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => grantStudentFree(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                          <Gift className="h-4 w-4" /> Lifetime
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => removeUser(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                          <Trash2 className="h-4 w-4" /> Remove
                         </Button>
                       </TableCell>
                     </TableRow>
