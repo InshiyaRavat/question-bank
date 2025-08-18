@@ -124,21 +124,39 @@ export default function SubscriptionPage() {
                 </div>
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Status</div>
-                  <div className={`text-lg font-semibold mt-1 ${subscription.status === 'active' ? 'text-green-700' : 'text-red-700'}`}>{subscription.status}</div>
+                  <div
+                    className={`text-lg font-semibold mt-1 ${
+                      subscription.status === "active" ? "text-green-700" : "text-red-700"
+                    }`}
+                  >
+                    {subscription.status}
+                  </div>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Days Remaining</div>
-                  <div className={`text-lg font-semibold mt-1 ${daysRemaining != null && daysRemaining <= 0 ? 'text-red-700' : 'text-gray-900'}`}>
-                    {daysRemaining == null ? '-' : daysRemaining <= 0 ? 'Expired' : `${daysRemaining} days`}
+                  <div
+                    className={`text-lg font-semibold mt-1 ${
+                      daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
+                    }`}
+                  >
+                    {daysRemaining == null ? "-" : daysRemaining <= 0 ? "Expired" : `${daysRemaining} days`}
                   </div>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Paid On</div>
-                  <div className="text-lg font-semibold mt-1">{subscription?.subscribedAt ? new Date(subscription.subscribedAt).toLocaleDateString() : '-'}</div>
+                  <div className="text-lg font-semibold mt-1">
+                    {subscription?.subscribedAt ? new Date(subscription.subscribedAt).toLocaleDateString() : "-"}
+                  </div>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Expires On</div>
-                  <div className={`text-lg font-semibold mt-1 ${daysRemaining != null && daysRemaining <= 0 ? 'text-red-700' : 'text-gray-900'}`}>{expiryDate ? expiryDate.toLocaleDateString() : '-'}</div>
+                  <div
+                    className={`text-lg font-semibold mt-1 ${
+                      daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
+                    }`}
+                  >
+                    {expiryDate ? expiryDate.toLocaleDateString() : "-"}
+                  </div>
                 </div>
               </div>
             )}
