@@ -58,7 +58,7 @@ export async function PATCH(req, { params }) {
   try {
     const { id } = params;
     const body = await req.json();
-    const { questionText, correctOptionIdx, options, topicId } = body;
+    const { questionText, correctOptionIdx, options, topicId, explanation } = body;
 
     if (!id) {
       return new Response(JSON.stringify({ error: "Question ID is required" }), {
@@ -74,6 +74,7 @@ export async function PATCH(req, { params }) {
         correctOptionIdx,
         options,
         topicId,
+        explanation,
       },
     });
 

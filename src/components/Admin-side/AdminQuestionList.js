@@ -138,6 +138,7 @@ const AdminQuestionList = ({ searchTerm }) => {
     // Initialize edit values with current question data
     setEditValues({
       questionText: question.questionText,
+      explanation: question.explanation || "",
       correctOptionIdx: question.correctOptionIdx,
       ...question.options.reduce(
         (acc, opt, idx) => ({
@@ -167,6 +168,8 @@ const AdminQuestionList = ({ searchTerm }) => {
       setEditValues((prev) => ({ ...prev, questionText: selectedQuestion.questionText }));
     } else if (field === "correctOptionIdx") {
       setEditValues((prev) => ({ ...prev, correctOptionIdx: selectedQuestion.correctOptionIdx }));
+    } else if (field === "explanation") {
+      setEditValues((prev) => ({ ...prev, explanation: selectedQuestion.explanation || "" }));
     } else if (field.startsWith("option-")) {
       const index = parseInt(field.split("-")[1]);
       setEditValues((prev) => ({ ...prev, [field]: selectedQuestion.options[index] }));
@@ -182,6 +185,8 @@ const AdminQuestionList = ({ searchTerm }) => {
       updated.options[index] = editValues[field];
     } else if (field === "correctOptionIdx") {
       updated[field] = parseInt(editValues[field]);
+    } else if (field === "explanation") {
+      updated.explanation = editValues.explanation;
     } else {
       updated[field] = editValues[field];
     }
@@ -570,6 +575,64 @@ const AdminQuestionList = ({ searchTerm }) => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Explanation */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
+                  Explanation
+                </label>
+                {editingFields.explanation ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={editValues.explanation}
+                      onChange={(e) => handleInputChange("explanation", e.target.value)}
+                      rows={4}
+                      className="w-full p-3 border rounded-md text-sm"
+                      style={{
+                        borderColor: THEME.neutral300,
+                        backgroundColor: THEME.white,
+                        color: THEME.textPrimary,
+                      }}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleFieldSave("explanation")}
+                        style={{ backgroundColor: THEME.primary }}
+                        className="text-white hover:opacity-90"
+                      >
+                        <Save className="w-3 h-3 mr-1" />
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleFieldCancel("explanation")}
+                        style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => handleFieldEdit("explanation")}
+                    className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow"
+                    style={{
+                      borderColor: THEME.neutral300,
+                      backgroundColor: THEME.neutral50,
+                      color: THEME.textPrimary,
+                    }}
+                  >
+                    <p className="text-sm whitespace-pre-line">{selectedQuestion.explanation || "No explanation provided."}</p>
+                    <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
+                      <Edit3 className="w-3 h-3" />
+                      Click to edit
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Correct Answer */}
