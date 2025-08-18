@@ -4,7 +4,9 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { THEME } from "@/theme";
-import { Search, Book } from "lucide-react";
+import { Search, Book, Filter } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import TopicList from "@/components/Admin-side/TopicList";
 
 export default function AdminSubjects() {
@@ -15,6 +17,8 @@ export default function AdminSubjects() {
     const [expandedTopics, setExpandedTopics] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [difficulty, setDifficulty] = useState("all");
+    const [tags, setTags] = useState("");
 
     useEffect(() => {
         if (isLoaded && isSignedIn && user) {
@@ -24,12 +28,15 @@ export default function AdminSubjects() {
 
     useEffect(() => {
         fetchSubjects();
-    }, []);
+    }, [difficulty, tags]);
 
     const fetchSubjects = async () => {
         try {
             setLoading(true);
-            const res = await fetch("/api/admin/subjects-with-questions");
+            const params = new URLSearchParams();
+            if (difficulty) params.set('difficulty', difficulty);
+            if (tags) params.set('tags', tags);
+            const res = await fetch(`/api/admin/subjects-with-questions?${params.toString()}`);
             if (!res.ok) throw new Error("Failed to fetch subjects");
             setSubjects(await res.json());
         } catch (err) {
@@ -140,6 +147,28 @@ export default function AdminSubjects() {
 
             {/* MAIN CONTENT */}
             <div className="p-6 bg-white">
+                {/* Filters */}
+                <div className="mb-4 p-4 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Filter className="h-4 w-4" />
+                        <span className="text-sm font-semibold">Filters</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Select value={difficulty} onValueChange={setDifficulty}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Difficulty" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Difficulties</SelectItem>
+                                <SelectItem value="easy">Easy</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="hard">Hard</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Input placeholder="Tags (comma-separated)" value={tags} onChange={(e) => setTags(e.target.value)} />
+                        <div />
+                    </div>
+                </div>
                 {filteredSubjects.length === 0 ? (
                     <div className="text-center py-12">
                         <Book className="h-12 w-12 mx-auto mb-4" style={{ color: THEME.textSecondary }} />

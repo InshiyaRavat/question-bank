@@ -33,6 +33,8 @@ model Question {
   options          String[]
   correctOptionIdx Int              @map("correct_option_index")
   explanation      String?
+  difficulty       String?
+  tags             String[]
   comments         Comment[]
   topic            Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
   solvedQuestions  SolvedQuestion[]
@@ -76,7 +78,7 @@ model Refund {
   status          String
   subscriptionId  Int?     @map("subscription_id")
   createdAt       DateTime @default(now()) @map("created_at")
-  processedBy     String?  @map("processed_by") // Admin who processed the refund
+  processedBy     String?  @map("processed_by")
 }
 
 model Subscription {

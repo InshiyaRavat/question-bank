@@ -14,12 +14,24 @@ export async function DELETE(_, { params }) {
   try {
     const questionId = parseInt(id);
 
+    // First get the question to access topicId
+    const existingQuestion = await prisma.question.findUnique({
+      where: { id: questionId },
+      select: { topicId: true },
+    });
+
+    if (!existingQuestion) {
+      return new Response(JSON.stringify({ error: "Question not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Run delete and topic update in a transaction
     const [deletedQuestion] = await prisma.$transaction([
-      // Step 1: Get the question (to access topicId)
+      // Step 1: Delete the question
       prisma.question.delete({
         where: { id: questionId },
-        // Return topicId as well for decrementing
         select: {
           id: true,
           topicId: true,
@@ -27,12 +39,14 @@ export async function DELETE(_, { params }) {
           correctOptionIdx: true,
           options: true,
           explanation: true,
+          difficulty: true,
+          tags: true,
         },
       }),
 
       // Step 2: Decrement topic.noOfQuestions
       prisma.topic.update({
-        where: { id: (await prisma.question.findUnique({ where: { id: questionId } }))?.topicId ?? 0 },
+        where: { id: existingQuestion.topicId },
         data: {
           noOfQuestions: {
             decrement: 1,
@@ -54,11 +68,11 @@ export async function DELETE(_, { params }) {
   }
 }
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await req.json();
-    const { questionText, correctOptionIdx, options, topicId, explanation } = body;
+    const { questionText, correctOptionIdx, options, topicId, explanation, difficulty, tags } = body;
 
     if (!id) {
       return new Response(JSON.stringify({ error: "Question ID is required" }), {
@@ -67,15 +81,20 @@ export async function PATCH(req, { params }) {
       });
     }
 
+    // Prepare update data - only include fields that are provided
+    const updateData = {};
+
+    if (questionText !== undefined) updateData.questionText = questionText;
+    if (correctOptionIdx !== undefined) updateData.correctOptionIdx = correctOptionIdx;
+    if (options !== undefined) updateData.options = options;
+    if (topicId !== undefined) updateData.topicId = topicId;
+    if (explanation !== undefined) updateData.explanation = explanation;
+    if (difficulty !== undefined) updateData.difficulty = difficulty;
+    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+
     const updatedQuestion = await prisma.question.update({
       where: { id: parseInt(id) },
-      data: {
-        questionText,
-        correctOptionIdx,
-        options,
-        topicId,
-        explanation,
-      },
+      data: updateData,
     });
 
     return new Response(JSON.stringify(updatedQuestion), {

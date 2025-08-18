@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(req) {
     try {
         // Check if user is authenticated
         const { userId } = await auth();
@@ -12,12 +12,22 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // Optional filters
+        const { searchParams } = new URL(req.url);
+        const difficulty = searchParams.get('difficulty'); // easy|medium|hard|all
+        const tagsRaw = searchParams.get('tags'); // comma-separated
+        const tagList = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+
         // Fetch all subjects with their topics and questions
         const subjects = await prisma.subject.findMany({
             include: {
                 topics: {
                     include: {
                         questions: {
+                            where: {
+                                ...(difficulty && difficulty !== 'all' ? { difficulty } : {}),
+                                ...(tagList.length ? { tags: { hasSome: tagList } } : {}),
+                            },
                             orderBy: {
                                 id: 'asc'
                             }

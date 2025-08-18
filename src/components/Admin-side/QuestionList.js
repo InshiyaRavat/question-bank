@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { THEME } from '@/theme';
 
@@ -48,6 +49,9 @@ export default function QuestionList({ questions: initialQuestions }) {
         setEditDialog(true);
         setEditValues({
             questionText: question.questionText,
+            explanation: question.explanation || "",
+            difficulty: question.difficulty || "medium",
+            tagsString: Array.isArray(question.tags) ? question.tags.join(", ") : "",
             correctOptionIdx: question.correctOptionIdx,
             ...question.options.reduce(
                 (acc, opt, idx) => ({
@@ -76,6 +80,12 @@ export default function QuestionList({ questions: initialQuestions }) {
             setEditValues((prev) => ({ ...prev, questionText: selectedQuestion.questionText }));
         } else if (field === "correctOptionIdx") {
             setEditValues((prev) => ({ ...prev, correctOptionIdx: selectedQuestion.correctOptionIdx }));
+        } else if (field === "explanation") {
+            setEditValues((prev) => ({ ...prev, explanation: selectedQuestion.explanation || "" }));
+        } else if (field === "difficulty") {
+            setEditValues((prev) => ({ ...prev, difficulty: selectedQuestion.difficulty || "medium" }));
+        } else if (field === "tagsString") {
+            setEditValues((prev) => ({ ...prev, tagsString: Array.isArray(selectedQuestion.tags) ? selectedQuestion.tags.join(", ") : "" }));
         } else if (field.startsWith("option-")) {
             const index = parseInt(field.split("-")[1]);
             setEditValues((prev) => ({ ...prev, [field]: selectedQuestion.options[index] }));
@@ -91,6 +101,16 @@ export default function QuestionList({ questions: initialQuestions }) {
             updated.options[index] = editValues[field];
         } else if (field === "correctOptionIdx") {
             updated[field] = parseInt(editValues[field]);
+        } else if (field === "explanation") {
+            updated.explanation = editValues.explanation;
+        } else if (field === "difficulty") {
+            updated.difficulty = editValues.difficulty || "medium";
+        } else if (field === "tagsString") {
+            const parsed = (editValues.tagsString || "")
+                .split(",")
+                .map((t) => t.trim())
+                .filter((t) => t.length > 0);
+            updated.tags = parsed;
         } else {
             updated[field] = editValues[field];
         }
@@ -336,6 +356,106 @@ export default function QuestionList({ questions: initialQuestions }) {
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* Explanation */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
+                                    Explanation
+                                </label>
+                                {editingFields.explanation ? (
+                                    <div className="space-y-2">
+                                        <Textarea
+                                            value={editValues.explanation}
+                                            onChange={(e) => handleInputChange("explanation", e.target.value)}
+                                            rows={4}
+                                            className="w-full p-3 border rounded-md text-sm"
+                                            style={{
+                                                borderColor: THEME.neutral300,
+                                                backgroundColor: THEME.white,
+                                                color: THEME.textPrimary,
+                                            }}
+                                        />
+                                        <div className="flex gap-2">
+                                            <Button size="sm" onClick={() => handleFieldSave("explanation")} style={{ backgroundColor: THEME.primary }} className="text-white hover:opacity-90">
+                                                Save
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => handleFieldCancel("explanation")} style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}>
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div onClick={() => handleFieldEdit("explanation")} className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow" style={{ borderColor: THEME.neutral300, backgroundColor: THEME.neutral50, color: THEME.textPrimary }}>
+                                        <p className="text-sm whitespace-pre-line">{selectedQuestion.explanation || 'No explanation provided.'}</p>
+                                        <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
+                                            Click to edit
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Difficulty */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
+                                    Difficulty
+                                </label>
+                                {editingFields.difficulty ? (
+                                    <div className="space-y-2">
+                                        <Select value={editValues.difficulty} onValueChange={(v) => handleInputChange("difficulty", v)}>
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="easy">Easy</SelectItem>
+                                                <SelectItem value="medium">Medium</SelectItem>
+                                                <SelectItem value="hard">Hard</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <div className="flex gap-2">
+                                            <Button size="sm" onClick={() => handleFieldSave("difficulty")} style={{ backgroundColor: THEME.primary }} className="text-white hover:opacity-90">
+                                                Save
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => handleFieldCancel("difficulty")} style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}>
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div onClick={() => handleFieldEdit("difficulty")} className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow" style={{ borderColor: THEME.neutral300, backgroundColor: THEME.neutral50, color: THEME.textPrimary }}>
+                                        <p className="text-sm capitalize">{selectedQuestion.difficulty || 'medium'}</p>
+                                        <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
+                                            Click to edit
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Tags */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
+                                    Tags (comma-separated)
+                                </label>
+                                {editingFields.tagsString ? (
+                                    <div className="space-y-2">
+                                        <Input value={editValues.tagsString} onChange={(e) => handleInputChange("tagsString", e.target.value)} />
+                                        <div className="flex gap-2">
+                                            <Button size="sm" onClick={() => handleFieldSave("tagsString")} style={{ backgroundColor: THEME.primary }} className="text-white hover:opacity-90">
+                                                Save
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => handleFieldCancel("tagsString")} style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}>
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div onClick={() => handleFieldEdit("tagsString")} className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow" style={{ borderColor: THEME.neutral300, backgroundColor: THEME.neutral50, color: THEME.textPrimary }}>
+                                        <p className="text-sm">{Array.isArray(selectedQuestion.tags) && selectedQuestion.tags.length ? selectedQuestion.tags.join(", ") : 'No tags'}</p>
+                                        <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
+                                            Click to edit
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Correct Answer */}

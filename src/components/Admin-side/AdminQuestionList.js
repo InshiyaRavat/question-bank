@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const AdminQuestionList = ({ searchTerm }) => {
   const [questionList, setQuestionList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [editDialog, setEditDialog] = useState(false);
@@ -28,25 +29,52 @@ const AdminQuestionList = ({ searchTerm }) => {
 
   // Add question form states
   const [newQuestion, setNewQuestion] = useState("");
-  const [newOptions, setNewOptions] = useState(["", "", "", "", ""]);
+  const [newOptions, setNewOptions] = useState(["", "", "", ""]);
   const [newCorrectAnswer, setNewCorrectAnswer] = useState("");
   const [newSelectedTopic, setNewSelectedTopic] = useState("");
+  const [newDifficulty, setNewDifficulty] = useState("medium");
+  const [newTags, setNewTags] = useState("");
 
   const { isLoaded, isSignedIn, user } = useUser();
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
-    fetch(`/api/question?userId=${user.id}`)
-      .then((res) => res.json())
-      .then((data) => setQuestionList(data))
-      .catch((err) => toast.error("Failed to fetch questions: " + err.message));
+
+    const fetchQuestions = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/question?userId=${user.id}`);
+        if (!response.ok) throw new Error('Failed to fetch questions');
+        const data = await response.json();
+        // Ensure data is always an array
+        setQuestionList(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error fetching questions:", error);
+        toast.error("Failed to fetch questions: " + error.message);
+        setQuestionList([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions();
   }, [isLoaded, isSignedIn, user]);
 
   useEffect(() => {
-    fetch("/api/topics")
-      .then((res) => res.json())
-      .then((data) => setTopics(data))
-      .catch((err) => toast.error("Failed to fetch topics: " + err.message));
+    const fetchTopics = async () => {
+      try {
+        const response = await fetch("/api/topics");
+        if (!response.ok) throw new Error('Failed to fetch topics');
+        const data = await response.json();
+        setTopics(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error fetching topics:", error);
+        toast.error("Failed to fetch topics: " + error.message);
+        setTopics([]);
+      }
+    };
+
+    fetchTopics();
   }, []);
 
   const handleDeleteClick = (question) => {
@@ -90,6 +118,8 @@ const AdminQuestionList = ({ searchTerm }) => {
     setNewOptions(["", "", "", ""]);
     setNewCorrectAnswer("");
     setNewSelectedTopic("");
+    setNewDifficulty("medium");
+    setNewTags("");
   };
 
   const handleAddNewQuestion = async () => {
@@ -105,11 +135,17 @@ const AdminQuestionList = ({ searchTerm }) => {
     }
 
     const topicId = topics.find((t) => t.name === newSelectedTopic)?.id || "1";
+    const tagsArray = newTags
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
     const questionData = {
       questionText: newQuestion,
       options: newOptions,
       correctOptionIdx: answerIndex,
       topicId,
+      difficulty: newDifficulty,
+      tags: tagsArray,
       explanation: "",
     };
 
@@ -139,6 +175,8 @@ const AdminQuestionList = ({ searchTerm }) => {
     setEditValues({
       questionText: question.questionText,
       explanation: question.explanation || "",
+      difficulty: question.difficulty || "medium",
+      tagsString: Array.isArray(question.tags) ? question.tags.join(", ") : "",
       correctOptionIdx: question.correctOptionIdx,
       ...question.options.reduce(
         (acc, opt, idx) => ({
@@ -170,6 +208,10 @@ const AdminQuestionList = ({ searchTerm }) => {
       setEditValues((prev) => ({ ...prev, correctOptionIdx: selectedQuestion.correctOptionIdx }));
     } else if (field === "explanation") {
       setEditValues((prev) => ({ ...prev, explanation: selectedQuestion.explanation || "" }));
+    } else if (field === "difficulty") {
+      setEditValues((prev) => ({ ...prev, difficulty: selectedQuestion.difficulty || "medium" }));
+    } else if (field === "tagsString") {
+      setEditValues((prev) => ({ ...prev, tagsString: Array.isArray(selectedQuestion.tags) ? selectedQuestion.tags.join(", ") : "" }));
     } else if (field.startsWith("option-")) {
       const index = parseInt(field.split("-")[1]);
       setEditValues((prev) => ({ ...prev, [field]: selectedQuestion.options[index] }));
@@ -187,6 +229,14 @@ const AdminQuestionList = ({ searchTerm }) => {
       updated[field] = parseInt(editValues[field]);
     } else if (field === "explanation") {
       updated.explanation = editValues.explanation;
+    } else if (field === "difficulty") {
+      updated.difficulty = editValues.difficulty || "medium";
+    } else if (field === "tagsString") {
+      const parsed = (editValues.tagsString || "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+      updated.tags = parsed;
     } else {
       updated[field] = editValues[field];
     }
@@ -217,6 +267,23 @@ const AdminQuestionList = ({ searchTerm }) => {
     }));
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md min-h-[80vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p style={{ color: THEME.textSecondary }}>Loading questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Safely filter questions - ensure questionList is always an array
+  const filteredQuestions = Array.isArray(questionList)
+    ? questionList.filter((q) => q.questionText.toLowerCase().includes(searchTerm.toLowerCase()))
+    : [];
+
   return (
     <div
       className="max-w-6xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md min-h-[80vh]"
@@ -225,7 +292,7 @@ const AdminQuestionList = ({ searchTerm }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: THEME.neutral900 }}>
-          Question List
+          Question List ({filteredQuestions.length})
         </h2>
         <button
           onClick={handleAddQuestion}
@@ -240,18 +307,38 @@ const AdminQuestionList = ({ searchTerm }) => {
 
       {/* Question List */}
       <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-2">
-        {questionList
-          .filter((q) => q.questionText.toLowerCase().includes(searchTerm.toLowerCase()))
-          .map((q, index) => (
+        {filteredQuestions.length === 0 ? (
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">
+              {searchTerm ? "No questions found matching your search." : "No questions available."}
+            </p>
+          </div>
+        ) : (
+          filteredQuestions.map((q, index) => (
             <div
-              key={index}
+              key={q.id || index}
               className="p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center"
               style={{ backgroundColor: THEME.neutral50 }}
             >
-              <p style={{ color: THEME.textPrimary }} className="break-words w-full sm:w-auto">
-                {q.questionText}
-              </p>
-              <div className="flex gap-4 self-end sm:self-auto">
+              <div className="flex-1">
+                <p style={{ color: THEME.textPrimary }} className="break-words">
+                  {q.questionText}
+                </p>
+                <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
+                  {q.difficulty && (
+                    <span className="capitalize px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                      {q.difficulty}
+                    </span>
+                  )}
+                  {Array.isArray(q.tags) && q.tags.length > 0 && (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded">
+                      {q.tags.join(", ")}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 self-end sm:self-auto">
                 <button
                   onClick={() => handleEdit(q)}
                   className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all duration-200 hover:shadow-md"
@@ -268,7 +355,8 @@ const AdminQuestionList = ({ searchTerm }) => {
                 </button>
               </div>
             </div>
-          ))}
+          ))
+        )}
       </div>
 
       {/* Add Question Dialog */}
@@ -418,6 +506,39 @@ const AdminQuestionList = ({ searchTerm }) => {
                 </Select>
               </div>
             </div>
+
+            {/* Difficulty & Tags */}
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Difficulty */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
+                  Difficulty
+                </label>
+                <Select value={newDifficulty} onValueChange={setNewDifficulty}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
+                  Tags (comma-separated)
+                </label>
+                <Input
+                  type="text"
+                  placeholder="e.g., algebra, equations, basics"
+                  value={newTags}
+                  onChange={(e) => setNewTags(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
           <DialogFooter style={{ borderTop: `1px solid ${THEME.neutral300}` }} className="pt-4">
@@ -521,7 +642,7 @@ const AdminQuestionList = ({ searchTerm }) => {
                   Answer Options
                 </label>
                 <div className="grid gap-2">
-                  {selectedQuestion.options.map((opt, idx) => (
+                  {selectedQuestion.options?.map((opt, idx) => (
                     <div key={idx} className="flex items-center gap-3">
                       <div
                         className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
@@ -635,6 +756,75 @@ const AdminQuestionList = ({ searchTerm }) => {
                 )}
               </div>
 
+              {/* Difficulty */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
+                  Difficulty
+                </label>
+                {editingFields.difficulty ? (
+                  <div className="space-y-2">
+                    <Select value={editValues.difficulty} onValueChange={(v) => handleInputChange("difficulty", v)}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">Easy</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleFieldSave("difficulty")} style={{ backgroundColor: THEME.primary }} className="text-white hover:opacity-90">
+                        <Save className="w-3 h-3 mr-1" />
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleFieldCancel("difficulty")} style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}>
+                        <X className="w-3 h-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div onClick={() => handleFieldEdit("difficulty")} className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow" style={{ borderColor: THEME.neutral300, backgroundColor: THEME.neutral50, color: THEME.textPrimary }}>
+                    <p className="text-sm capitalize">{selectedQuestion.difficulty || 'medium'}</p>
+                    <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
+                      <Edit3 className="w-3 h-3" />
+                      Click to edit
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
+                  Tags (comma-separated)
+                </label>
+                {editingFields.tagsString ? (
+                  <div className="space-y-2">
+                    <Input value={editValues.tagsString} onChange={(e) => handleInputChange("tagsString", e.target.value)} />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleFieldSave("tagsString")} style={{ backgroundColor: THEME.primary }} className="text-white hover:opacity-90">
+                        <Save className="w-3 h-3 mr-1" />
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleFieldCancel("tagsString")} style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}>
+                        <X className="w-3 h-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div onClick={() => handleFieldEdit("tagsString")} className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow" style={{ borderColor: THEME.neutral300, backgroundColor: THEME.neutral50, color: THEME.textPrimary }}>
+                    <p className="text-sm">{Array.isArray(selectedQuestion.tags) && selectedQuestion.tags.length ? selectedQuestion.tags.join(", ") : 'No tags'}</p>
+                    <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
+                      <Edit3 className="w-3 h-3" />
+                      Click to edit
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Correct Answer */}
               <div className="space-y-2">
                 <label className="text-sm font-medium" style={{ color: THEME.neutral700 }}>
@@ -657,7 +847,7 @@ const AdminQuestionList = ({ searchTerm }) => {
                         <SelectValue placeholder="Select correct option" />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectedQuestion.options.map((opt, idx) => (
+                        {selectedQuestion.options?.map((opt, idx) => (
                           <SelectItem key={idx} value={idx.toString()}>
                             <div className="flex items-center gap-2">
                               <div
@@ -710,7 +900,7 @@ const AdminQuestionList = ({ searchTerm }) => {
                       >
                         {String.fromCharCode(65 + selectedQuestion.correctOptionIdx)}
                       </div>
-                      <span className="text-sm">{selectedQuestion.options[selectedQuestion.correctOptionIdx]}</span>
+                      <span className="text-sm">{selectedQuestion.options?.[selectedQuestion.correctOptionIdx]}</span>
                     </div>
                     <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
                       <Edit3 className="w-3 h-3" />
@@ -770,7 +960,7 @@ const AdminQuestionList = ({ searchTerm }) => {
                   {selectedQuestion.questionText}
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  {selectedQuestion.options.map((opt, idx) => (
+                  {selectedQuestion.options?.map((opt, idx) => (
                     <div
                       key={idx}
                       className="flex items-center gap-2 text-sm p-2 border rounded"
