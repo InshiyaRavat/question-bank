@@ -8,6 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { THEME } from "@/theme";
 import { MessageSquare, Reply, Search, Trash2 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
@@ -21,6 +31,9 @@ export default function AdminCommentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
+  const [deletingComment, setDeletingComment] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
 
   useEffect(() => {
     if (isLoaded && isSignedIn && user) {
@@ -78,6 +91,42 @@ export default function AdminCommentsPage() {
       console.error("Error adding reply:", error);
       toast.error("Failed to add reply");
     }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      setDeletingComment(commentId);
+      const response = await fetch(`/api/comment/${commentId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          adminUserId: user.id,
+          adminUsername: user.username,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Comment deleted successfully!");
+        fetchComments(); // Refresh to remove deleted comment
+        setDeleteDialogOpen(false);
+        setCommentToDelete(null);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || "Failed to delete comment");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error("Failed to delete comment");
+    } finally {
+      setDeletingComment(null);
+    }
+  };
+
+  const openDeleteDialog = (comment) => {
+    setCommentToDelete(comment);
+    setDeleteDialogOpen(true);
   };
 
   const filteredComments = comments.filter(
@@ -176,6 +225,17 @@ export default function AdminCommentsPage() {
                             Question ID: {comment.questionId} • {formatDate(comment.createdAt)}
                           </p>
                         </div>
+                        {/* Delete Button */}
+                        <Button
+                          onClick={() => openDeleteDialog(comment)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          disabled={deletingComment === comment.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          {deletingComment === comment.id ? "Deleting..." : "Delete"}
+                        </Button>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -262,6 +322,45 @@ export default function AdminCommentsPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Comment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this comment by{" "}
+              <span className="font-semibold">
+                {commentToDelete?.username || "Anonymous"}
+              </span>
+              ? This action cannot be undone and will also delete all replies to this comment.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 p-3 bg-gray-50 rounded-md border-l-4 border-red-500">
+            <p className="text-sm text-gray-700 line-clamp-3">
+              "{commentToDelete?.comment}"
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setCommentToDelete(null);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleDeleteComment(commentToDelete?.id)}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={deletingComment === commentToDelete?.id}
+            >
+              {deletingComment === commentToDelete?.id ? "Deleting..." : "Delete Comment"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ToastContainer />
     </SidebarInset>
   );
