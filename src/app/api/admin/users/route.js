@@ -73,6 +73,7 @@ export async function GET(req) {
         role: (u && u.publicMetadata && u.publicMetadata.role) ? u.publicMetadata.role : "student",
         planDuration: null,
         accuracy: null,
+        hasLifetimeAccess: false, // Will be updated below
       };
     });
 
@@ -93,10 +94,13 @@ export async function GET(req) {
       }
       users = users.map((u) => {
         const sub = latestSubByUser.get(u.id);
+        // Consider durations >= 1200 months as lifetime access
+        const hasLifetimeAccess = sub?.duration >= 1200;
         return {
           ...u,
-          planDuration: sub?.duration ?? null,
+          planDuration: hasLifetimeAccess ? null : (sub?.duration ?? null),
           subscriptionStatus: sub?.status ?? null,
+          hasLifetimeAccess,
         };
       });
     }
@@ -127,7 +131,7 @@ export async function GET(req) {
     // Apply filters for plan and performance if provided
     if (planFilter) {
       if (planFilter === "none") {
-        users = users.filter((u) => !u.planDuration);
+        users = users.filter((u) => !u.planDuration && !u.hasLifetimeAccess);
       } else {
         const planNum = parseInt(planFilter, 10);
         users = users.filter((u) => u.planDuration === planNum);
@@ -178,7 +182,7 @@ export async function GET(req) {
 }
 
 // POST /api/admin/users
-// Body: { action: "create" | "grant_admin" | "grant_student_free" | "remove", ...payload }
+// Body: { action: "create" | "grant_admin" | "remove_admin" | "grant_student_free" | "remove_student_free" | "remove", ...payload }
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -248,6 +252,71 @@ export async function POST(req) {
       });
     }
 
+    // Remove admin role and set to student (with safety check to prevent removing last admin)
+    if (action === "remove_admin") {
+      const { userId } = body;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "userId is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const requester = auth();
+      const requesterId = requester?.userId || null;
+
+      // Check if target is actually an admin
+      const target = await clerk.users.getUser(userId);
+      const targetRole = target && target.publicMetadata ? target.publicMetadata.role : undefined;
+      const targetIsAdmin = targetRole === "admin";
+
+      if (!targetIsAdmin) {
+        return new Response(JSON.stringify({ error: "User is not an admin" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Count other admins besides target
+      let offset = 0;
+      let adminCountExcludingTarget = 0;
+      while (true) {
+        const { data } = await clerk.users.getUserList({ limit: 100, offset });
+        if (!data || data.length === 0) break;
+        for (const u of data) {
+          const role = u && u.publicMetadata ? u.publicMetadata.role : undefined;
+          if (role === "admin" && u.id !== userId) {
+            adminCountExcludingTarget += 1;
+            if (adminCountExcludingTarget >= 1) break;
+          }
+        }
+        if (adminCountExcludingTarget >= 1) break;
+        offset += data.length;
+        if (offset > 5000) break; // safety bound
+      }
+
+      if (adminCountExcludingTarget === 0) {
+        return new Response(
+          JSON.stringify({ error: "Cannot remove admin role: this is the last admin." }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Prevent self-demotion if only admin (though covered above)
+      if (requesterId && requesterId === userId && adminCountExcludingTarget === 0) {
+        return new Response(
+          JSON.stringify({ error: "You cannot remove your own admin role as the last admin." }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      await clerk.users.updateUser(userId, { publicMetadata: { role: "student" } });
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Grant student role and free lifetime subscription (prevent demoting last admin)
     if (action === "grant_student_free") {
       const { userId } = body;
@@ -296,6 +365,46 @@ export async function POST(req) {
           duration: 1200,
         },
       });
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Remove lifetime access (remove subscriptions with duration >= 1200)
+    if (action === "remove_student_free") {
+      const { userId } = body;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "userId is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Check if user actually has lifetime access
+      const lifetimeSubscriptions = await prisma.subscription.findMany({
+        where: {
+          userId,
+          duration: { gte: 1200 },
+          status: "active"
+        },
+      });
+
+      if (lifetimeSubscriptions.length === 0) {
+        return new Response(JSON.stringify({ error: "User does not have lifetime access" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Remove all lifetime subscriptions (duration >= 1200)
+      await prisma.subscription.deleteMany({
+        where: {
+          userId,
+          duration: { gte: 1200 }
+        },
+      });
+
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },

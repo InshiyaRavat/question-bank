@@ -7,10 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Eye, ChevronLeft, ChevronRight, Plus, Shield, Gift, Trash2 } from "lucide-react";
+import { Search, Users, Eye, ChevronLeft, ChevronRight, Plus, Shield, Gift, Trash2, ShieldOff, X } from "lucide-react";
 import UserProgress from "./UserProgress";
 import TestHistory from "./TestHistory";
-import THEME from "@/theme";
 
 const formatDate = (ts) => {
   try {
@@ -90,8 +89,20 @@ export default function UsersTable() {
     fetchUsers();
   };
 
+  const removeAdmin = async (userId) => {
+    if (!confirm('Remove admin privileges from this user?')) return;
+    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove_admin', userId }) });
+    fetchUsers();
+  };
+
   const grantStudentFree = async (userId) => {
     await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'grant_student_free', userId }) });
+    fetchUsers();
+  };
+
+  const removeStudentFree = async (userId) => {
+    if (!confirm('Remove lifetime access from this user?')) return;
+    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove_student_free', userId }) });
     fetchUsers();
   };
 
@@ -329,7 +340,7 @@ export default function UsersTable() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <div className="flex items-center justify-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                         Loading users...
@@ -340,7 +351,7 @@ export default function UsersTable() {
 
                 {!loading && users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <div className="text-center">
                         <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">No users found</p>
@@ -356,7 +367,6 @@ export default function UsersTable() {
                         {`${user.firstName || ""} ${user.lastName || ""}`.trim() || "-"}
                       </TableCell>
                       <TableCell>{user.email || "-"}</TableCell>
-                      {/* style={{ backgroundColor: THEME.primary }} */}
                       <TableCell>
                         {user.username ? (
                           <Badge variant="outline" className="text-blue-600 border-blue-600">
@@ -376,6 +386,8 @@ export default function UsersTable() {
                       <TableCell>
                         {user.planDuration ? (
                           <Badge variant="secondary">{user.planDuration} mo</Badge>
+                        ) : user.hasLifetimeAccess ? (
+                          <Badge className="bg-green-500 text-white">Lifetime</Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
@@ -385,19 +397,38 @@ export default function UsersTable() {
                       </TableCell>
                       <TableCell>{user.birthday || "-"}</TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
-                      <TableCell className="text-right space-y-3">
-                        <Button variant="outline" size="sm" onClick={() => onViewHistory(user)} className="inline-flex items-center gap-2 cursor-pointer">
-                          <Eye className="h-4 w-4" /> View
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => grantAdmin(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
-                          <Shield className="h-4 w-4" /> Admin
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => grantStudentFree(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
-                          <Gift className="h-4 w-4" /> Lifetime
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => removeUser(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
-                          <Trash2 className="h-4 w-4" /> Remove
-                        </Button>
+                      <TableCell className="text-right space-y-1">
+                        <div className="flex flex-col gap-1">
+                          <Button variant="outline" size="sm" onClick={() => onViewHistory(user)} className="inline-flex items-center gap-2 cursor-pointer">
+                            <Eye className="h-4 w-4" /> View
+                          </Button>
+
+                          {/* Admin Controls */}
+                          {user.role === 'admin' ? (
+                            <Button variant="outline" size="sm" onClick={() => removeAdmin(user.id)} className="inline-flex items-center gap-2 cursor-pointer text-orange-600 hover:text-orange-700">
+                              <ShieldOff className="h-4 w-4" /> Remove Admin
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" onClick={() => grantAdmin(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                              <Shield className="h-4 w-4" /> Make Admin
+                            </Button>
+                          )}
+
+                          {/* Lifetime Access Controls */}
+                          {user.hasLifetimeAccess ? (
+                            <Button variant="outline" size="sm" onClick={() => removeStudentFree(user.id)} className="inline-flex items-center gap-2 cursor-pointer text-orange-600 hover:text-orange-700">
+                              <X className="h-4 w-4" /> Remove Lifetime
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" onClick={() => grantStudentFree(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                              <Gift className="h-4 w-4" /> Grant Lifetime
+                            </Button>
+                          )}
+
+                          <Button variant="destructive" size="sm" onClick={() => removeUser(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                            <Trash2 className="h-4 w-4" /> Remove
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -433,7 +464,7 @@ export default function UsersTable() {
                 </span>
               </div>
 
-              <button
+              <Button
                 variant="outline"
                 size="sm"
                 disabled={currentPage >= totalPages}
@@ -442,7 +473,7 @@ export default function UsersTable() {
               >
                 Next
                 <ChevronRight className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           </div>
         </CardContent>
