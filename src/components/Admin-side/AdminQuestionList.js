@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const AdminQuestionList = ({ searchTerm }) => {
   const [questionList, setQuestionList] = useState([]);
@@ -27,9 +28,16 @@ const AdminQuestionList = ({ searchTerm }) => {
   const [addQuestionDialog, setAddQuestionDialog] = useState(false);
   const [topics, setTopics] = useState([]);
 
+  // Bulk delete states
+  const [selectedQuestions, setSelectedQuestions] = useState(new Set());
+  const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+
   // Add question form states
   const [newQuestion, setNewQuestion] = useState("");
-  const [newOptions, setNewOptions] = useState(["", "", "", ""]);
+  const [newOptions, setNewOptions] = useState(["", "", "", "", ""]);
   const [newCorrectAnswer, setNewCorrectAnswer] = useState("");
   const [newSelectedTopic, setNewSelectedTopic] = useState("");
   const [newDifficulty, setNewDifficulty] = useState("medium");
@@ -77,6 +85,75 @@ const AdminQuestionList = ({ searchTerm }) => {
     fetchTopics();
   }, []);
 
+  // Bulk delete functions
+  const toggleBulkDeleteMode = () => {
+    setBulkDeleteMode(!bulkDeleteMode);
+    setSelectedQuestions(new Set());
+  };
+
+  const handleQuestionSelect = (questionId) => {
+    const newSelected = new Set(selectedQuestions);
+    if (newSelected.has(questionId)) {
+      newSelected.delete(questionId);
+    } else {
+      newSelected.add(questionId);
+    }
+    setSelectedQuestions(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedQuestions.size === filteredQuestions.length) {
+      setSelectedQuestions(new Set());
+    } else {
+      setSelectedQuestions(new Set(filteredQuestions.map(q => q.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedQuestions.size === 0) {
+      toast.error("Please select questions to delete");
+      return;
+    }
+    setShowBulkDeleteModal(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedQuestions.size === 0) return;
+
+    setBulkDeleting(true);
+    try {
+      const response = await fetch('/api/question/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          questionIds: Array.from(selectedQuestions)
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete questions');
+      }
+
+      const result = await response.json();
+
+      // Remove deleted questions from the list
+      setQuestionList(prev => prev.filter(q => !selectedQuestions.has(q.id)));
+      setSelectedQuestions(new Set());
+      setBulkDeleteMode(false);
+      setShowBulkDeleteModal(false);
+
+      toast.success(`Successfully deleted ${result.deletedCount} questions`);
+    } catch (error) {
+      console.error("Bulk delete error:", error);
+      toast.error("Failed to delete questions: " + error.message);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const handleDeleteClick = (question) => {
     setSelectedQuestion(question);
     setShowDeleteModal(true);
@@ -115,7 +192,7 @@ const AdminQuestionList = ({ searchTerm }) => {
 
   const resetAddQuestionForm = () => {
     setNewQuestion("");
-    setNewOptions(["", "", "", ""]);
+    setNewOptions(["", "", "", "", ""]);
     setNewCorrectAnswer("");
     setNewSelectedTopic("");
     setNewDifficulty("medium");
@@ -294,7 +371,59 @@ const AdminQuestionList = ({ searchTerm }) => {
         <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: THEME.neutral900 }}>
           Question List ({filteredQuestions.length})
         </h2>
-        <button
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          {/* Bulk Delete Controls */}
+          {bulkDeleteMode && (
+            <div className="flex gap-2 items-center">
+              <Button
+                onClick={handleSelectAll}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                {selectedQuestions.size === filteredQuestions.length ? "Deselect All" : "Select All"}
+              </Button>
+              <Button
+                onClick={handleBulkDelete}
+                disabled={selectedQuestions.size === 0}
+                variant="destructive"
+                size="sm"
+                className="text-xs"
+              >
+                Delete Selected ({selectedQuestions.size})
+              </Button>
+              <Button
+                onClick={toggleBulkDeleteMode}
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <Button
+              onClick={toggleBulkDeleteMode}
+              variant={bulkDeleteMode ? "destructive" : "outline"}
+              className={`${bulkDeleteMode ? 'bg-red-50 text-red-600 border-red-200' : ''} text-sm`}
+            >
+              {bulkDeleteMode ? "Exit Bulk Mode" : "Bulk Delete"}
+            </Button>
+            <button
+              onClick={handleAddQuestion}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto cursor-pointer flex items-center gap-3 group"
+            >
+              <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <Plus className="w-3 h-3" />
+              </div>
+              Create Question
+            </button>
+          </div>
+        </div>
+        {/* <button
           onClick={handleAddQuestion}
           className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto cursor-pointer flex items-center gap-3 group"
         >
@@ -302,10 +431,10 @@ const AdminQuestionList = ({ searchTerm }) => {
             <Plus className="w-3 h-3" />
           </div>
           Create Question
-        </button>
+        </button> */}
       </div>
 
-      {/* Question List */}
+      {/* Question List
       <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-2">
         {filteredQuestions.length === 0 ? (
           <div className="text-center py-8">
@@ -357,7 +486,173 @@ const AdminQuestionList = ({ searchTerm }) => {
             </div>
           ))
         )}
+      </div> */}
+
+      {/* Question List */}
+      <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-2">
+        {filteredQuestions.length === 0 ? (
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">
+              {searchTerm ? "No questions found matching your search." : "No questions available."}
+            </p>
+          </div>
+        ) : (
+          filteredQuestions.map((q, index) => (
+            <div
+              key={q.id || index}
+              className={`p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center transition-all ${selectedQuestions.has(q.id) ? 'bg-blue-50 border-2 border-blue-200' : ''
+                }`}
+              style={{ backgroundColor: selectedQuestions.has(q.id) ? '#eff6ff' : THEME.neutral50 }}
+            >
+              <div className="flex items-start gap-3 flex-1">
+                {/* Bulk Select Checkbox */}
+                {bulkDeleteMode && (
+                  <Checkbox
+                    checked={selectedQuestions.has(q.id)}
+                    onCheckedChange={() => handleQuestionSelect(q.id)}
+                    className="mt-1"
+                  />
+                )}
+
+                <div className="flex-1">
+                  <p style={{ color: THEME.textPrimary }} className="break-words">
+                    {q.questionText}
+                  </p>
+                  <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
+                    {q.difficulty && (
+                      <span className="capitalize px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                        {q.difficulty}
+                      </span>
+                    )}
+                    {Array.isArray(q.tags) && q.tags.length > 0 && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded">
+                        {q.tags.join(", ")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {!bulkDeleteMode && (
+                <div className="flex gap-2 self-end sm:self-auto">
+                  <button
+                    onClick={() => handleEdit(q)}
+                    className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all duration-200 hover:shadow-md"
+                    title="Edit question"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(q)}
+                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 transition-all duration-200 hover:shadow-md"
+                    title="Delete question"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
+
+      {/* Bulk Delete Confirmation Modal */}
+      <Dialog open={showBulkDeleteModal} onOpenChange={setShowBulkDeleteModal}>
+        <DialogContent className="max-w-2xl" style={{ backgroundColor: THEME.white }}>
+          <DialogHeader className="pb-4" style={{ borderBottom: `1px solid ${THEME.neutral300}` }}>
+            <DialogTitle className="text-xl font-semibold flex items-center gap-2" style={{ color: THEME.error }}>
+              <AlertTriangle className="w-5 h-5" />
+              Delete Multiple Questions
+            </DialogTitle>
+            <DialogDescription style={{ color: THEME.textSecondary }}>
+              You are about to permanently delete {selectedQuestions.size} question{selectedQuestions.size !== 1 ? 's' : ''}. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div
+              className="p-4 border rounded-lg max-h-64 overflow-y-auto"
+              style={{
+                backgroundColor: THEME.neutral50,
+                borderColor: THEME.neutral300,
+              }}
+            >
+              <h4 className="font-medium mb-3" style={{ color: THEME.neutral900 }}>
+                Questions to be deleted:
+              </h4>
+              <div className="space-y-2">
+                {filteredQuestions
+                  .filter(q => selectedQuestions.has(q.id))
+                  .map((question, idx) => (
+                    <div
+                      key={question.id}
+                      className="p-3 border rounded text-sm"
+                      style={{
+                        backgroundColor: THEME.white,
+                        borderColor: THEME.neutral300,
+                        color: THEME.textPrimary,
+                      }}
+                    >
+                      <span className="font-medium text-xs text-gray-500 mr-2">#{idx + 1}</span>
+                      {question.questionText.length > 100
+                        ? `${question.questionText.substring(0, 100)}...`
+                        : question.questionText
+                      }
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div
+              className="mt-4 p-3 border rounded-lg flex items-start gap-2"
+              style={{
+                backgroundColor: "#fef3c7",
+                borderColor: "#f59e0b",
+              }}
+            >
+              <AlertTriangle className="w-4 h-4 mt-0.5" style={{ color: THEME.warning }} />
+              <div>
+                <span className="font-medium text-sm" style={{ color: "#92400e" }}>
+                  Warning:
+                </span>
+                <p className="text-sm mt-1" style={{ color: "#92400e" }}>
+                  These questions will be permanently removed and cannot be recovered. Topic question counts will be updated automatically.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter style={{ borderTop: `1px solid ${THEME.neutral300}` }} className="pt-4">
+            <div className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setShowBulkDeleteModal(false)}
+                disabled={bulkDeleting}
+                style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmBulkDelete}
+                disabled={bulkDeleting}
+                style={{ backgroundColor: THEME.error }}
+                className="flex-1 text-white hover:opacity-90"
+              >
+                {bulkDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  `Delete ${selectedQuestions.size} Questions`
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Question Dialog */}
       <Dialog open={addQuestionDialog} onOpenChange={setAddQuestionDialog}>
@@ -1024,7 +1319,7 @@ const AdminQuestionList = ({ searchTerm }) => {
         </DialogContent>
       </Dialog>
       <ToastContainer />
-    </div>
+    </div >
   );
 };
 
