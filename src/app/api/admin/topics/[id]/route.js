@@ -1,5 +1,3 @@
-// /app/api/admin/topics/[id]/route.js
-
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { PrismaClient } from "@prisma/client";
@@ -10,9 +8,9 @@ export async function DELETE(request, { params }) {
     try {
         // Check authentication
         const { userId } = auth();
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        // if (!userId) {
+        //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        // }
 
         const topicId = parseInt(params.id);
         if (!topicId || isNaN(topicId)) {

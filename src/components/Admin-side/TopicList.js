@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, FileText, Trash2, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, Trash2, AlertTriangle, Plus } from "lucide-react";
 import QuestionList from "./QuestionList";
 import { THEME } from "@/theme";
 
@@ -9,6 +9,8 @@ export default function TopicList({
     expandedTopics,
     toggleTopicExpansion,
     onTopicDeleted, // New prop to handle topic deletion
+    onAddTopicClick, // New prop to handle adding topics
+    subject, // Subject info for the add topic functionality
 }) {
     const [deletingTopicId, setDeletingTopicId] = useState(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
@@ -91,6 +93,17 @@ export default function TopicList({
     return (
         <>
             <div className="divide-y" style={{ borderColor: THEME.neutral200 }}>
+                {/* Add Topic Button */}
+                <div className="p-4 border-b bg-gray-50" style={{ borderColor: THEME.neutral200 }}>
+                    <button
+                        onClick={() => onAddTopicClick(subject)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Topic
+                    </button>
+                </div>
+
                 {topics.map((topic) => (
                     <div key={topic.id}>
                         {/* Topic Header */}
