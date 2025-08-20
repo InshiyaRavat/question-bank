@@ -12,6 +12,8 @@ import {
   MessageSquare,
   CreditCard,
   Shield,
+  Megaphone,
+  Activity,
 } from "lucide-react";
 
 import {
@@ -68,10 +70,22 @@ const adminNavItems = [
     description: "Moderate discussions",
   },
   {
+    title: "Announcements",
+    url: "/admin/announcements",
+    icon: Megaphone,
+    description: "Manage announcements",
+  },
+  {
     title: "Subscriptions",
     url: "/admin/subscriptions",
     icon: CreditCard,
     description: "Manage user plans",
+  },
+  {
+    title: "Activity Logs",
+    url: "/admin/activity-logs",
+    icon: Activity,
+    description: "Admin activity tracking",
   },
 ];
 

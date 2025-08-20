@@ -35,6 +35,7 @@
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 // Define public routes that don't require authentication
 const isPublicRoute = createRouteMatcher([
@@ -50,16 +51,20 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)", "/api/admin(.*)"]);
 export default clerkMiddleware(async (authHandler, request) => {
   // Protect all routes except public ones
   if (!isPublicRoute(request)) {
-    // Use authHandler to protect and get session info
-    const { sessionClaims } = await authHandler.protect();
-    
-    if (!isAdminRoute(request) && sessionClaims?.metadata?.role !== "admin") {
-      // Use NextResponse.redirect() with absolute URL
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
+    await authHandler.protect();
+
+    // // Check admin routes
+    // if (isAdminRoute(request)) {
+    //   const { sessionClaims } = await auth();
+    //   const userRole = sessionClaims?.metadata?.role;
+
+    //   if (userRole !== "admin") {
+    //     // Redirect non-admin users trying to access admin routes
+    //     return NextResponse.redirect(new URL("/dashboard", request.url));
+    //   }
+    // }
   }
 
-  // Return nothing for public routes or successful auth
   return NextResponse.next();
 });
 

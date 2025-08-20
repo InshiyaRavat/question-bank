@@ -4,9 +4,10 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { PlanProvider } from "@/context/PlanContext";
 import { AttemptedQuestionProvider } from "@/context/AttemptedQuestionContext";
 import { SelectedTopicsProvider } from "@/context/SelectedTopicsContext";
-import { Inter } from 'next/font/google';
+import { Inter } from "next/font/google";
+import { ToastProvider } from "@/components/ui/toast";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Create Next App",
@@ -19,11 +20,11 @@ export default function RootLayout({ children }) {
       <PlanProvider>
         <AttemptedQuestionProvider>
           <SelectedTopicsProvider>
-            <html lang="en">
-              <body className={`${inter.className} antialiased`}>
-                {children}
-              </body>
-            </html>
+            <ToastProvider>
+              <html lang="en">
+                <body className={`${inter.className} antialiased`}>{children}</body>
+              </html>
+            </ToastProvider>
           </SelectedTopicsProvider>
         </AttemptedQuestionProvider>
       </PlanProvider>

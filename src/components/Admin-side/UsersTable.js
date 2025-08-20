@@ -7,9 +7,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Eye, ChevronLeft, ChevronRight, Plus, Shield, Gift, Trash2, ShieldOff, X } from "lucide-react";
+import {
+  Search,
+  Users,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Shield,
+  Gift,
+  Trash2,
+  ShieldOff,
+  X,
+  CheckSquare,
+  Square,
+  Trash,
+} from "lucide-react";
 import UserProgress from "./UserProgress";
 import TestHistory from "./TestHistory";
+import BulkDeleteDialog from "./BulkDeleteDialog";
+import { useToast } from "@/components/ui/toast";
 
 const formatDate = (ts) => {
   try {
@@ -37,7 +54,19 @@ export default function UsersTable() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("users");
   const [creating, setCreating] = useState(false);
-  const [newUser, setNewUser] = useState({ email: "", password: "", username: "", firstName: "", lastName: "", role: "student", grantLifetime: false });
+  const [newUser, setNewUser] = useState({
+    email: "",
+    password: "",
+    username: "",
+    firstName: "",
+    lastName: "",
+    role: "student",
+    grantLifetime: false,
+  });
+  const [selectedUsers, setSelectedUsers] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const { toast } = useToast();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -56,6 +85,8 @@ export default function UsersTable() {
       const data = await res.json();
       setUsers(data.users || []);
       setTotal(data.totalCount || 0);
+      // Clear selections when data changes
+      setSelectedUsers(new Set());
     } catch (e) {
       // no-op
     } finally {
@@ -67,17 +98,34 @@ export default function UsersTable() {
     if (!newUser.email || !newUser.password) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', ...newUser })
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", ...newUser }),
       });
       if (res.ok) {
-        setNewUser({ email: "", password: "", username: "", firstName: "", lastName: "", role: "student", grantLifetime: false });
+        setNewUser({
+          email: "",
+          password: "",
+          username: "",
+          firstName: "",
+          lastName: "",
+          role: "student",
+          grantLifetime: false,
+        });
         fetchUsers();
-        alert('User created successfully');
+        toast({
+          type: "success",
+          title: "User created",
+          description: "User has been created successfully",
+        });
       } else {
-        alert('Failed to create user');
+        const data = await res.json();
+        toast({
+          type: "error",
+          title: "Failed to create user",
+          description: data.error || "An error occurred while creating the user",
+        });
       }
     } finally {
       setCreating(false);
@@ -85,31 +133,136 @@ export default function UsersTable() {
   };
 
   const grantAdmin = async (userId) => {
-    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'grant_admin', userId }) });
+    await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "grant_admin", userId }),
+    });
     fetchUsers();
   };
 
   const removeAdmin = async (userId) => {
-    if (!confirm('Remove admin privileges from this user?')) return;
-    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove_admin', userId }) });
+    if (!confirm("Remove admin privileges from this user?")) return;
+    await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove_admin", userId }),
+    });
     fetchUsers();
   };
 
   const grantStudentFree = async (userId) => {
-    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'grant_student_free', userId }) });
+    await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "grant_student_free", userId }),
+    });
     fetchUsers();
   };
 
   const removeStudentFree = async (userId) => {
-    if (!confirm('Remove lifetime access from this user?')) return;
-    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove_student_free', userId }) });
+    if (!confirm("Remove lifetime access from this user?")) return;
+    await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove_student_free", userId }),
+    });
     fetchUsers();
   };
 
   const removeUser = async (userId) => {
-    if (!confirm('Remove this user? This will delete related data.')) return;
-    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', userId }) });
+    if (!confirm("Remove this user? This will delete related data.")) return;
+    await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", userId }),
+    });
     fetchUsers();
+  };
+
+  const handleSelectUser = (userId) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.size === users.length) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(users.map((user) => user.id)));
+    }
+  };
+
+  const handleBulkDeleteClick = () => {
+    if (selectedUsers.size === 0) return;
+    setShowBulkDeleteDialog(true);
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    setBulkDeleting(true);
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "bulk_remove",
+          userIds: Array.from(selectedUsers),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Show success toast
+        toast({
+          type: "success",
+          title: "Bulk deletion completed",
+          description: `Successfully deleted ${result.results.successful.length} of ${result.results.totalProcessed} users`,
+          duration: 6000,
+        });
+
+        // Show failed deletions if any
+        if (result.results.failed.length > 0) {
+          toast({
+            type: "warning",
+            title: "Some deletions failed",
+            description: `${result.results.failed.length} users could not be deleted. Check console for details.`,
+            duration: 8000,
+          });
+          console.error("Failed deletions:", result.results.failed);
+        }
+
+        setSelectedUsers(new Set());
+        setShowBulkDeleteDialog(false);
+        fetchUsers();
+      } else {
+        toast({
+          type: "error",
+          title: "Bulk deletion failed",
+          description: result.error || "An unexpected error occurred",
+          duration: 6000,
+        });
+      }
+    } catch (error) {
+      toast({
+        type: "error",
+        title: "Network error",
+        description: "Failed to delete users. Please try again.",
+        duration: 6000,
+      });
+      console.error("Bulk delete error:", error);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedUsers(new Set());
   };
 
   useEffect(() => {
@@ -165,8 +318,12 @@ export default function UsersTable() {
         {/* User Details Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="progress" className='!text-gray-700'>Progress Overview</TabsTrigger>
-            <TabsTrigger value="history" className='!text-gray-700'>Test History</TabsTrigger>
+            <TabsTrigger value="progress" className="!text-gray-700">
+              Progress Overview
+            </TabsTrigger>
+            <TabsTrigger value="history" className="!text-gray-700">
+              Test History
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="progress" className="mt-6">
@@ -288,18 +445,38 @@ export default function UsersTable() {
             </div>
             {/* Create User */}
             <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-3 items-center">
-              <Input placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-              <Input placeholder="Password" type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
-              <Input placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
+              <Input
+                placeholder="Email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              />
+              <Input
+                placeholder="Password"
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              />
+              <Input
+                placeholder="Username"
+                value={newUser.username}
+                onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+              />
               <Select value={newUser.role} onValueChange={(v) => setNewUser({ ...newUser, role: v })}>
-                <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
               <div className="flex items-center gap-2">
-                <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={newUser.grantLifetime} onChange={(e) => setNewUser({ ...newUser, grantLifetime: e.target.checked })} />
+                <label className="text-sm flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newUser.grantLifetime}
+                    onChange={(e) => setNewUser({ ...newUser, grantLifetime: e.target.checked })}
+                  />
                   Lifetime free
                 </label>
                 <Button size="sm" onClick={createUser} disabled={creating} className="flex items-center gap-2">
@@ -310,6 +487,39 @@ export default function UsersTable() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Bulk Actions Bar */}
+      {selectedUsers.size > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-orange-600" />
+                  <span className="font-medium text-orange-900">
+                    {selectedUsers.size} user{selectedUsers.size !== 1 ? "s" : ""} selected
+                  </span>
+                </div>
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                  Clear Selection
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDeleteClick}
+                  disabled={bulkDeleting}
+                  className="flex items-center gap-2"
+                >
+                  <Trash className="h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Users Table */}
       <Card>
@@ -326,6 +536,15 @@ export default function UsersTable() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Button variant="ghost" size="sm" onClick={handleSelectAll} className="h-8 w-8 p-0">
+                      {selectedUsers.size === users.length && users.length > 0 ? (
+                        <CheckSquare className="h-4 w-4" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Username</TableHead>
@@ -340,7 +559,7 @@ export default function UsersTable() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={10} className="text-center py-8">
                       <div className="flex items-center justify-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                         Loading users...
@@ -351,7 +570,7 @@ export default function UsersTable() {
 
                 {!loading && users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={10} className="text-center py-8">
                       <div className="text-center">
                         <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">No users found</p>
@@ -362,7 +581,24 @@ export default function UsersTable() {
 
                 {!loading &&
                   users.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-muted/50">
+                    <TableRow
+                      key={user.id}
+                      className={`hover:bg-muted/50 ${selectedUsers.has(user.id) ? "bg-blue-50" : ""}`}
+                    >
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSelectUser(user.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          {selectedUsers.has(user.id) ? (
+                            <CheckSquare className="h-4 w-4 text-blue-600" />
+                          ) : (
+                            <Square className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TableCell>
                       <TableCell className="font-medium">
                         {`${user.firstName || ""} ${user.lastName || ""}`.trim() || "-"}
                       </TableCell>
@@ -377,10 +613,12 @@ export default function UsersTable() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {user.role === 'admin' ? (
+                        {user.role === "admin" ? (
                           <Badge className="bg-red-500 text-white">Admin</Badge>
                         ) : (
-                          <Badge variant="outline" className='text-black'>User</Badge>
+                          <Badge variant="outline" className="text-black">
+                            User
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -393,39 +631,73 @@ export default function UsersTable() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {typeof user.accuracy === "number" ? `${user.accuracy}%` : <span className="text-muted-foreground">-</span>}
+                        {typeof user.accuracy === "number" ? (
+                          `${user.accuracy}%`
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>{user.birthday || "-"}</TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
                       <TableCell className="text-right space-y-1">
                         <div className="flex flex-col gap-1">
-                          <Button variant="outline" size="sm" onClick={() => onViewHistory(user)} className="inline-flex items-center gap-2 cursor-pointer">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onViewHistory(user)}
+                            className="inline-flex items-center gap-2 cursor-pointer"
+                          >
                             <Eye className="h-4 w-4" /> View
                           </Button>
 
                           {/* Admin Controls */}
-                          {user.role === 'admin' ? (
-                            <Button variant="outline" size="sm" onClick={() => removeAdmin(user.id)} className="inline-flex items-center gap-2 cursor-pointer text-orange-600 hover:text-orange-700">
+                          {user.role === "admin" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeAdmin(user.id)}
+                              className="inline-flex items-center gap-2 cursor-pointer text-orange-600 hover:text-orange-700"
+                            >
                               <ShieldOff className="h-4 w-4" /> Remove Admin
                             </Button>
                           ) : (
-                            <Button variant="outline" size="sm" onClick={() => grantAdmin(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => grantAdmin(user.id)}
+                              className="inline-flex items-center gap-2 cursor-pointer"
+                            >
                               <Shield className="h-4 w-4" /> Make Admin
                             </Button>
                           )}
 
                           {/* Lifetime Access Controls */}
                           {user.hasLifetimeAccess ? (
-                            <Button variant="outline" size="sm" onClick={() => removeStudentFree(user.id)} className="inline-flex items-center gap-2 cursor-pointer text-orange-600 hover:text-orange-700">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeStudentFree(user.id)}
+                              className="inline-flex items-center gap-2 cursor-pointer text-orange-600 hover:text-orange-700"
+                            >
                               <X className="h-4 w-4" /> Remove Lifetime
                             </Button>
                           ) : (
-                            <Button variant="outline" size="sm" onClick={() => grantStudentFree(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => grantStudentFree(user.id)}
+                              className="inline-flex items-center gap-2 cursor-pointer"
+                            >
                               <Gift className="h-4 w-4" /> Grant Lifetime
                             </Button>
                           )}
 
-                          <Button variant="destructive" size="sm" onClick={() => removeUser(user.id)} className="inline-flex items-center gap-2 cursor-pointer">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeUser(user.id)}
+                            className="inline-flex items-center gap-2 cursor-pointer"
+                          >
                             <Trash2 className="h-4 w-4" /> Remove
                           </Button>
                         </div>
@@ -478,6 +750,15 @@ export default function UsersTable() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Bulk Delete Dialog */}
+      <BulkDeleteDialog
+        isOpen={showBulkDeleteDialog}
+        onClose={() => setShowBulkDeleteDialog(false)}
+        onConfirm={handleBulkDeleteConfirm}
+        selectedUsers={users.filter((user) => selectedUsers.has(user.id))}
+        isLoading={bulkDeleting}
+      />
     </div>
   );
 }

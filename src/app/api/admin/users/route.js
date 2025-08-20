@@ -1,7 +1,19 @@
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { PrismaClient } from "@prisma/client";
+import { logAdminActivity, ADMIN_ACTIONS, RESOURCE_TYPES, extractClientInfo } from "@/lib/adminLogger";
 
 const prisma = new PrismaClient();
+
+// Helper function to get admin info from auth
+async function getAdminInfo() {
+  const { userId, sessionClaims } = await auth();
+  const adminName =
+    sessionClaims?.firstName && sessionClaims?.lastName
+      ? `${sessionClaims.firstName} ${sessionClaims.lastName}`.trim()
+      : sessionClaims?.username || "Unknown Admin";
+
+  return { adminId: userId, adminName };
+}
 
 // GET /api/admin/users?query=&sort=&order=&limit=&offset=
 export async function GET(req) {
@@ -17,8 +29,10 @@ export async function GET(req) {
     const performanceMaxRaw = searchParams.get("accuracyMax"); // percent int
 
     const planFilter = planFilterRaw ? String(planFilterRaw) : undefined;
-    const accuracyMin = performanceMinRaw !== null && performanceMinRaw !== undefined ? parseInt(performanceMinRaw, 10) : undefined;
-    const accuracyMax = performanceMaxRaw !== null && performanceMaxRaw !== undefined ? parseInt(performanceMaxRaw, 10) : undefined;
+    const accuracyMin =
+      performanceMinRaw !== null && performanceMinRaw !== undefined ? parseInt(performanceMinRaw, 10) : undefined;
+    const accuracyMax =
+      performanceMaxRaw !== null && performanceMaxRaw !== undefined ? parseInt(performanceMaxRaw, 10) : undefined;
     console.log("query", query);
     console.log("sort", sort);
     console.log("order", order);
@@ -40,7 +54,12 @@ export async function GET(req) {
     }
 
     const clerk = await clerkClient();
-    const filtersActive = Boolean(planFilter) || accuracyMin !== undefined || accuracyMax !== undefined || sort === "name" || sort === "dob";
+    const filtersActive =
+      Boolean(planFilter) ||
+      accuracyMin !== undefined ||
+      accuracyMax !== undefined ||
+      sort === "name" ||
+      sort === "dob";
     const clerkQueryOptionsBase = {
       ...(query ? { query } : {}),
       orderBy,
@@ -70,7 +89,7 @@ export async function GET(req) {
         imageUrl: u.imageUrl || null,
         createdAt: u.createdAt,
         birthday,
-        role: (u && u.publicMetadata && u.publicMetadata.role) ? u.publicMetadata.role : "student",
+        role: u && u.publicMetadata && u.publicMetadata.role ? u.publicMetadata.role : "student",
         planDuration: null,
         accuracy: null,
         hasLifetimeAccess: false, // Will be updated below
@@ -98,7 +117,7 @@ export async function GET(req) {
         const hasLifetimeAccess = sub?.duration >= 1200;
         return {
           ...u,
-          planDuration: hasLifetimeAccess ? null : (sub?.duration ?? null),
+          planDuration: hasLifetimeAccess ? null : sub?.duration ?? null,
           subscriptionStatus: sub?.status ?? null,
           hasLifetimeAccess,
         };
@@ -200,6 +219,8 @@ export async function POST(req) {
     // Create a new user in Clerk, optionally set role, and optionally grant lifetime subscription
     if (action === "create") {
       const { email, password, username, firstName, lastName, role, grantLifetime } = body;
+      const { userId: adminId } = await auth();
+      const { ipAddress, userAgent } = extractClientInfo(req);
 
       if (!email || !password) {
         return new Response(JSON.stringify({ error: "email and password are required" }), {
@@ -230,22 +251,63 @@ export async function POST(req) {
         });
       }
 
-      return new Response(
-        JSON.stringify({ success: true, userId: created.id }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+      // Log the activity
+      await logAdminActivity({
+        adminId,
+        adminName: `${firstName || ""} ${lastName || ""}`.trim() || username || "Unknown Admin",
+        action: ADMIN_ACTIONS.USER_CREATED,
+        resource: RESOURCE_TYPES.USER,
+        resourceId: created.id,
+        details: {
+          email,
+          username,
+          role: role === "admin" ? "admin" : "student",
+          grantLifetime: !!grantLifetime,
+        },
+        ipAddress,
+        userAgent,
+      });
+
+      return new Response(JSON.stringify({ success: true, userId: created.id }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Grant admin role via Clerk metadata
     if (action === "grant_admin") {
       const { userId } = body;
+      const { adminId, adminName } = await getAdminInfo();
+      const { ipAddress, userAgent } = extractClientInfo(req);
+
       if (!userId) {
         return new Response(JSON.stringify({ error: "userId is required" }), {
           status: 400,
           headers: { "Content-Type": "application/json" },
         });
       }
+
+      // Get target user info for logging
+      const targetUser = await clerk.users.getUser(userId);
+
       await clerk.users.updateUser(userId, { publicMetadata: { role: "admin" } });
+
+      // Log the activity
+      await logAdminActivity({
+        adminId,
+        adminName,
+        action: ADMIN_ACTIONS.USER_ROLE_GRANTED,
+        resource: RESOURCE_TYPES.USER,
+        resourceId: userId,
+        details: {
+          targetUserEmail: targetUser.emailAddresses?.[0]?.emailAddress,
+          targetUserName: `${targetUser.firstName || ""} ${targetUser.lastName || ""}`.trim(),
+          roleGranted: "admin",
+        },
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -296,18 +358,18 @@ export async function POST(req) {
       }
 
       if (adminCountExcludingTarget === 0) {
-        return new Response(
-          JSON.stringify({ error: "Cannot remove admin role: this is the last admin." }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Cannot remove admin role: this is the last admin." }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       // Prevent self-demotion if only admin (though covered above)
       if (requesterId && requesterId === userId && adminCountExcludingTarget === 0) {
-        return new Response(
-          JSON.stringify({ error: "You cannot remove your own admin role as the last admin." }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "You cannot remove your own admin role as the last admin." }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       await clerk.users.updateUser(userId, { publicMetadata: { role: "student" } });
@@ -349,10 +411,10 @@ export async function POST(req) {
           if (offset > 5000) break; // safety bound
         }
         if (adminCountExcludingTarget === 0) {
-          return new Response(
-            JSON.stringify({ error: "Cannot change role: this is the last admin." }),
-            { status: 400, headers: { "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: "Cannot change role: this is the last admin." }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       }
 
@@ -386,7 +448,7 @@ export async function POST(req) {
         where: {
           userId,
           duration: { gte: 1200 },
-          status: "active"
+          status: "active",
         },
       });
 
@@ -401,7 +463,7 @@ export async function POST(req) {
       await prisma.subscription.deleteMany({
         where: {
           userId,
-          duration: { gte: 1200 }
+          duration: { gte: 1200 },
         },
       });
 
@@ -449,18 +511,18 @@ export async function POST(req) {
         }
 
         if (adminCountExcludingTarget === 0) {
-          return new Response(
-            JSON.stringify({ error: "Cannot remove the last admin user." }),
-            { status: 400, headers: { "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: "Cannot remove the last admin user." }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         // Optional: block self-delete if only admin (covered above). If more admins exist, allow.
         if (requesterId && requesterId === userId && adminCountExcludingTarget === 0) {
-          return new Response(
-            JSON.stringify({ error: "You are the only admin and cannot remove yourself." }),
-            { status: 400, headers: { "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: "You are the only admin and cannot remove yourself." }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       }
 
@@ -478,6 +540,168 @@ export async function POST(req) {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    // Bulk remove users: delete multiple users at once with proper validation
+    if (action === "bulk_remove") {
+      const { userIds } = body;
+      const { adminId, adminName } = await getAdminInfo();
+      const { ipAddress, userAgent } = extractClientInfo(req);
+
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return new Response(JSON.stringify({ error: "userIds array is required and cannot be empty" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Limit bulk operations to prevent abuse
+      if (userIds.length > 50) {
+        return new Response(JSON.stringify({ error: "Cannot delete more than 50 users at once" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const requester = auth();
+      const requesterId = requester?.userId || null;
+
+      // Prevent self-deletion in bulk operations
+      if (requesterId && userIds.includes(requesterId)) {
+        return new Response(JSON.stringify({ error: "Cannot delete your own account in bulk operations" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Get all target users and check their roles
+      const targets = await Promise.all(
+        userIds.map(async (userId) => {
+          try {
+            const user = await clerk.users.getUser(userId);
+            const role = user?.publicMetadata?.role || "student";
+            return { id: userId, role, user };
+          } catch (error) {
+            return { id: userId, role: null, user: null, error: true };
+          }
+        })
+      );
+
+      // Check for invalid user IDs
+      const invalidUsers = targets.filter((t) => t.error);
+      if (invalidUsers.length > 0) {
+        return new Response(
+          JSON.stringify({
+            error: `Invalid user IDs: ${invalidUsers.map((u) => u.id).join(", ")}`,
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Count admins in the target list
+      const adminTargets = targets.filter((t) => t.role === "admin");
+
+      if (adminTargets.length > 0) {
+        // Count total admins in the system
+        let offset = 0;
+        let totalAdmins = 0;
+        while (true) {
+          const { data } = await clerk.users.getUserList({ limit: 100, offset });
+          if (!data || data.length === 0) break;
+          for (const u of data) {
+            const role = u?.publicMetadata?.role;
+            if (role === "admin") {
+              totalAdmins += 1;
+            }
+          }
+          offset += data.length;
+          if (offset > 5000) break; // safety bound
+        }
+
+        // Check if we would be removing all admins
+        if (totalAdmins <= adminTargets.length) {
+          return new Response(
+            JSON.stringify({
+              error: "Cannot delete all admin users. At least one admin must remain.",
+            }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+      }
+
+      // Track successful and failed deletions
+      const results = {
+        successful: [],
+        failed: [],
+        totalProcessed: userIds.length,
+      };
+
+      // Process deletions
+      for (const target of targets) {
+        try {
+          // Delete user data from database
+          await prisma.$transaction([
+            prisma.subscription.deleteMany({ where: { userId: target.id } }),
+            prisma.attemptedQuestion.deleteMany({ where: { userId: target.id } }),
+            prisma.solvedQuestion.deleteMany({ where: { userId: target.id } }),
+            prisma.reply.deleteMany({ where: { userId: target.id } }),
+            prisma.comment.deleteMany({ where: { userId: target.id } }),
+            // Also delete announcement reads for this user
+            prisma.announcementRead.deleteMany({ where: { userId: target.id } }),
+          ]);
+
+          // Delete user from Clerk
+          await clerk.users.deleteUser(target.id);
+
+          results.successful.push({
+            id: target.id,
+            name: `${target.user?.firstName || ""} ${target.user?.lastName || ""}`.trim() || "Unknown User",
+          });
+        } catch (error) {
+          console.error(`Failed to delete user ${target.id}:`, error);
+          results.failed.push({
+            id: target.id,
+            name: `${target.user?.firstName || ""} ${target.user?.lastName || ""}`.trim() || "Unknown User",
+            error: error.message,
+          });
+        }
+      }
+
+      // Log the bulk delete activity
+      await logAdminActivity({
+        adminId,
+        adminName,
+        action: ADMIN_ACTIONS.USER_BULK_DELETED,
+        resource: RESOURCE_TYPES.USER,
+        resourceId: null, // No single resource ID for bulk operations
+        details: {
+          totalRequested: results.totalProcessed,
+          successfulDeletions: results.successful.length,
+          failedDeletions: results.failed.length,
+          deletedUsers: results.successful.map((u) => ({ id: u.id, name: u.name })),
+          failedUsers: results.failed.map((u) => ({ id: u.id, name: u.name, error: u.error })),
+        },
+        ipAddress,
+        userAgent,
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          results,
+          message: `Successfully deleted ${results.successful.length} of ${results.totalProcessed} users`,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {

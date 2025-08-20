@@ -98,3 +98,47 @@ model Topic {
   questions          Question[]
   subject            Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 }
+
+model Announcement {
+  id         Int                @id @default(autoincrement())
+  title      String
+  content    String
+  type       String             @default("info") // info, warning, success, error
+  priority   String             @default("medium") // low, medium, high, urgent
+  isActive   Boolean            @default(true) @map("is_active")
+  targetRole String             @default("all") @map("target_role") // all, student, admin
+  startDate  DateTime?          @map("start_date")
+  endDate    DateTime?          @map("end_date")
+  createdBy  String             @map("created_by") // admin user ID
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  readBy     AnnouncementRead[]
+}
+
+model AnnouncementRead {
+  id             Int          @id @default(autoincrement())
+  userId         String       @map("user_id")
+  announcementId Int          @map("announcement_id")
+  readAt         DateTime     @default(now()) @map("read_at")
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, announcementId])
+}
+
+model AdminActivityLog {
+  id         Int      @id @default(autoincrement())
+  adminId    String   @map("admin_id") // ID of the admin who performed the action
+  adminName  String   @map("admin_name") // Name of the admin for quick reference
+  action     String // Action type (e.g., "user_created", "user_deleted", "announcement_created")
+  resource   String // Resource type (e.g., "user", "announcement", "subscription")
+  resourceId String?  @map("resource_id") // ID of the affected resource
+  details    Json? // Additional details about the action (JSON format)
+  ipAddress  String?  @map("ip_address") // IP address of the admin
+  userAgent  String?  @map("user_agent") // Browser/user agent information
+  timestamp  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([resource])
+  @@index([timestamp])
+}
