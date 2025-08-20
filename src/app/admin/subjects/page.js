@@ -4,7 +4,7 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { THEME } from "@/theme";
-import { Search, Book, Filter } from "lucide-react";
+import { Search, Book, Filter, RefreshCw } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import TopicList from "@/components/Admin-side/TopicList";
@@ -19,6 +19,7 @@ export default function AdminSubjects() {
     const [error, setError] = useState("");
     const [difficulty, setDifficulty] = useState("all");
     const [tags, setTags] = useState("");
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         if (isLoaded && isSignedIn && user) {
@@ -34,7 +35,7 @@ export default function AdminSubjects() {
         try {
             setLoading(true);
             const params = new URLSearchParams();
-            if (difficulty) params.set('difficulty', difficulty);
+            if (difficulty !== "all") params.set('difficulty', difficulty);
             if (tags) params.set('tags', tags);
             const res = await fetch(`/api/admin/subjects-with-questions?${params.toString()}`);
             if (!res.ok) throw new Error("Failed to fetch subjects");
@@ -44,6 +45,33 @@ export default function AdminSubjects() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await fetchSubjects();
+        setRefreshing(false);
+    };
+
+    const handleTopicDeleted = (deletedTopicId) => {
+        // Remove the deleted topic from the subjects state
+        setSubjects(prevSubjects =>
+            prevSubjects.map(subject => ({
+                ...subject,
+                topics: subject.topics.filter(topic => topic.id !== deletedTopicId)
+            })).filter(subject => subject.topics.length > 0) // Remove subjects with no topics
+        );
+
+        // Remove from expanded topics if it was expanded
+        setExpandedTopics(prev => {
+            const updated = new Set(prev);
+            updated.delete(deletedTopicId);
+            return updated;
+        });
+
+        // Show success message
+        // You could replace this with a toast notification if you have one
+        alert("Topic deleted successfully!");
     };
 
     const toggleTopicExpansion = (topicId) => {
@@ -118,6 +146,14 @@ export default function AdminSubjects() {
                     </h1>
                 </div>
                 <div className="ml-auto flex items-center gap-4 px-4">
+                    <button
+                        onClick={handleRefresh}
+                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                        title="Refresh data"
+                        disabled={refreshing}
+                    >
+                        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                    </button>
                     <div className="relative w-full max-w-sm">
                         <Search
                             className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
@@ -169,6 +205,7 @@ export default function AdminSubjects() {
                         <div />
                     </div>
                 </div>
+
                 {filteredSubjects.length === 0 ? (
                     <div className="text-center py-12">
                         <Book className="h-12 w-12 mx-auto mb-4" style={{ color: THEME.textSecondary }} />
@@ -205,6 +242,7 @@ export default function AdminSubjects() {
                                 topics={subject.topics}
                                 expandedTopics={expandedTopics}
                                 toggleTopicExpansion={toggleTopicExpansion}
+                                onTopicDeleted={handleTopicDeleted}
                             />
                         </div>
                     ))
