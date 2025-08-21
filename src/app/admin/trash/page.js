@@ -179,7 +179,7 @@ export default function TrashPage() {
 
         <div className="flex items-center space-x-2" style={{ color: colors.textSecondary }}>
           {getItemIcon(item.type)}
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs !text-gray-700">
             {item.type}
           </Badge>
         </div>

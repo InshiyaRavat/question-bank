@@ -81,8 +81,17 @@ export default function SubscriptionPage() {
         });
         alert("Subscription canceled.");
       } else if (action === "renew") {
-        // Placeholder: route to payment or renew flow
-        alert("Redirecting to renew flow...");
+        const res = await fetch(`/api/stripe/renew`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscriptionId: subscription.id, userId: user.id })
+        });
+        const json = await res.json();
+        if (json.url) {
+          window.location.href = json.url; // redirect to Stripe Checkout
+        } else {
+          alert("Failed to renew subscription.");
+        }
       }
     } catch (e) {
       alert("Action failed. Try again.");
@@ -125,9 +134,8 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Status</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${
-                      subscription.status === "active" ? "text-green-700" : "text-red-700"
-                    }`}
+                    className={`text-lg font-semibold mt-1 ${subscription.status === "active" ? "text-green-700" : "text-red-700"
+                      }`}
                   >
                     {subscription.status}
                   </div>
@@ -135,9 +143,8 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Days Remaining</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${
-                      daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
-                    }`}
+                    className={`text-lg font-semibold mt-1 ${daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
+                      }`}
                   >
                     {daysRemaining == null ? "-" : daysRemaining <= 0 ? "Expired" : `${daysRemaining} days`}
                   </div>
@@ -151,9 +158,8 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Expires On</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${
-                      daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
-                    }`}
+                    className={`text-lg font-semibold mt-1 ${daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
+                      }`}
                   >
                     {expiryDate ? expiryDate.toLocaleDateString() : "-"}
                   </div>

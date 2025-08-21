@@ -86,11 +86,16 @@ model Refund {
 }
 
 model Subscription {
-  id           Int      @id @default(autoincrement())
-  userId       String   @map("user_id")
-  status       String
-  duration     Int
-  subscribedAt DateTime @default(now()) @map("subscribed_at")
+  id                  Int      @id @default(autoincrement())
+  userId              String   @map("user_id")
+  status              String   // active, canceled, past_due, trialing, etc.
+  duration            Int      // in months (6 or 12)
+  stripeCustomerId    String   @map("stripe_customer_id")
+  stripeSubscriptionId String   @unique @map("stripe_subscription_id")
+  stripePriceId       String   @map("stripe_price_id")
+  subscribedAt        DateTime @default(now()) @map("subscribed_at")
+  currentPeriodEnd    DateTime @map("current_period_end")
+  cancelAtPeriodEnd   Boolean  @default(false) @map("cancel_at_period_end")
 }
 
 model Topic {
