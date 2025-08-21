@@ -4,7 +4,18 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const topics = await prisma.topic.findMany({
-      include: { subject: true },
+      where: {
+        AND: [
+          {
+            deletedAt: null,
+          },
+          {
+            subject: {
+              deletedAt: null,
+            },
+          },
+        ],
+      },
     });
 
     return new Response(JSON.stringify(topics), {
@@ -13,9 +24,9 @@ export async function GET() {
     });
   } catch (err) {
     console.error(err);
-    return new Response(
-      JSON.stringify({ error: "Failed to fetch topics" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Failed to fetch topics" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

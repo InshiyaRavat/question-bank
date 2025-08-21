@@ -1,11 +1,87 @@
 @import "tailwindcss";
- /* @import "tw-animate-css"; */
+/* @import "tw-animate-css"; */
 
-/* @custom-variant dark (&:is(.dark *)); */
-
+/* Theme CSS Variables */
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Theme colors will be injected by ThemeProvider */
+  --color-primary: #2563eb;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-textPrimary: #111827;
+  --color-textSecondary: #6b7280;
+  --color-border: #d1d5db;
+}
+
+/* Dark theme support */
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+}
+
+/* Theme-aware utility classes */
+.bg-theme-background {
+  background-color: var(--color-background);
+}
+
+.bg-theme-surface {
+  background-color: var(--color-surface);
+}
+
+.text-theme-primary {
+  color: var(--color-textPrimary);
+}
+
+.text-theme-secondary {
+  color: var(--color-textSecondary);
+}
+
+.text-theme-muted {
+  color: var(--color-textMuted);
+}
+
+.border-theme {
+  border-color: var(--color-border);
+}
+
+.bg-theme-primary {
+  background-color: var(--color-primary);
+}
+
+/* Override Tailwind classes with theme-aware ones */
+.text-primary {
+  color: var(--color-textPrimary) !important;
+}
+
+.text-secondary {
+  color: var(--color-textSecondary) !important;
+}
+
+.text-muted {
+  color: var(--color-textMuted) !important;
+}
+
+.bg-surface {
+  background-color: var(--color-surface) !important;
+}
+
+.bg-background {
+  background-color: var(--color-background) !important;
+}
+
+.border-default {
+  border-color: var(--color-border) !important;
+}
+
+/* Hover states */
+.hover\:bg-surface:hover {
+  background-color: var(--color-surfaceHover) !important;
+}
+
+.hover\:text-primary:hover {
+  color: var(--color-textPrimary) !important;
 }
 
 @theme inline {

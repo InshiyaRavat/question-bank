@@ -12,16 +12,20 @@ export async function DELETE(request, { params }) {
         //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         // }
 
-        const topicId = parseInt(params.id);
+        const topicId = parseInt(await params.id);
         if (!topicId || isNaN(topicId)) {
             return NextResponse.json({ error: "Invalid topic ID" }, { status: 400 });
         }
 
-        // Check if topic exists
+        // Check if topic exists and is not already deleted
         const existingTopic = await prisma.topic.findUnique({
-            where: { id: topicId },
+            where: {
+                id: topicId,
+                deletedAt: null, // Only find non-deleted topics
+            },
             include: {
                 questions: {
+                    where: { deletedAt: null }, // Only count non-deleted questions
                     include: {
                         _count: {
                             select: {
@@ -43,55 +47,68 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ error: "Topic not found" }, { status: 404 });
         }
 
-        // Calculate total items that will be deleted for logging
-        const questionIds = existingTopic.questions.map(q => q.id);
+        // Calculate total items that will be affected for logging
+        const questionIds = existingTopic.questions.map((q) => q.id);
         const totalComments = existingTopic.questions.reduce((sum, q) => sum + q._count.comments, 0);
         const totalSolvedQuestions = existingTopic.questions.reduce((sum, q) => sum + q._count.solvedQuestions, 0);
         const totalAttemptedQuestions = existingTopic._count.attemptedQuestions;
+
+        // Perform soft delete in a transaction
+        await prisma.$transaction(async (tx) => {
+            // Soft delete all questions in this topic
+            if (questionIds.length > 0) {
+                await tx.question.updateMany({
+                    where: {
+                        topicId: topicId,
+                        deletedAt: null,
+                    },
+                    data: {
+                        deletedAt: new Date(),
+                        deletedBy: userId || "admin",
+                    },
+                });
+            }
+
+            // Soft delete the topic
+            await tx.topic.update({
+                where: { id: topicId },
+                data: {
+                    deletedAt: new Date(),
+                    deletedBy: userId || "admin",
+                },
+            });
+        });
 
         // Log admin activity
         try {
             await prisma.adminActivityLog.create({
                 data: {
-                    adminId: userId,
+                    adminId: userId || "admin",
                     adminName: "Admin", // You might want to get the actual admin name from Clerk
-                    action: "topic_deleted",
+                    action: "topic_soft_deleted",
                     resource: "topic",
                     resourceId: topicId.toString(),
                     details: {
                         topicName: existingTopic.name,
                         subjectId: existingTopic.subjectId,
-                        questionsDeleted: existingTopic.questions.length,
-                        commentsDeleted: totalComments,
-                        solvedQuestionsDeleted: totalSolvedQuestions,
-                        attemptedQuestionsDeleted: totalAttemptedQuestions,
+                        questionsMovedToTrash: existingTopic.questions.length,
+                        commentsAffected: totalComments,
+                        solvedQuestionsAffected: totalSolvedQuestions,
+                        attemptedQuestionsAffected: totalAttemptedQuestions,
                         questionIds: questionIds,
                     },
-                    ipAddress: request.headers.get('x-forwarded-for') ||
-                        request.headers.get('x-real-ip') ||
-                        'unknown',
-                    userAgent: request.headers.get('user-agent') || 'unknown',
+                    ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
+                    userAgent: request.headers.get("user-agent") || "unknown",
                 },
             });
         } catch (logError) {
             console.error("Failed to log admin activity:", logError);
-            // Continue with deletion even if logging fails
+            // Continue even if logging fails
         }
-
-        // Delete the topic (cascade delete will handle related records)
-        // Due to the onDelete: Cascade in your schema, this will automatically delete:
-        // - All questions in this topic
-        // - All comments on those questions
-        // - All replies to those comments
-        // - All solved questions records
-        // - All attempted questions records
-        await prisma.topic.delete({
-            where: { id: topicId },
-        });
 
         return NextResponse.json({
             success: true,
-            message: "Topic deleted successfully",
+            message: "Topic moved to trash successfully",
             deletedCounts: {
                 topics: 1,
                 questions: existingTopic.questions.length,
@@ -100,19 +117,15 @@ export async function DELETE(request, { params }) {
                 attemptedQuestions: totalAttemptedQuestions,
             },
         });
-
     } catch (error) {
-        console.error("Error deleting topic:", error);
+        console.error("Error soft deleting topic:", error);
 
         // Handle specific Prisma errors
-        if (error.code === 'P2025') {
+        if (error.code === "P2025") {
             return NextResponse.json({ error: "Topic not found" }, { status: 404 });
         }
 
-        return NextResponse.json(
-            { error: "Failed to delete topic. Please try again." },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Failed to delete topic. Please try again." }, { status: 500 });
     } finally {
         await prisma.$disconnect();
     }

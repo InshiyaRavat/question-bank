@@ -4,8 +4,13 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const subjects = await prisma.subject.findMany({
+      where: {
+        deletedAt: null, // Only include non-deleted subjects
+      },
       include: {
-        topics: true,
+        topics: {
+          where: { deletedAt: null }, // Only include non-deleted topics
+        },
       },
     });
 
@@ -15,12 +20,9 @@ export async function GET() {
     });
   } catch (err) {
     console.error(err);
-    return new Response(
-      JSON.stringify({ error: "Failed to fetch subjects" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Failed to fetch subjects" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

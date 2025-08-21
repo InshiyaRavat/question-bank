@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const userId = searchParams.get("userId");
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "User ID is required" }), {
@@ -16,11 +16,27 @@ export async function GET(request) {
 
     const questions = await prisma.question.findMany({
       where: {
-        // Add any filtering conditions here if needed
+        AND: [
+          {
+            deletedAt: null,
+          },
+          {
+            topic: {
+              deletedAt: null,
+              subject: {
+                deletedAt: null,
+              },
+            },
+          },
+        ],
       },
       include: {
-        topic: true // Include related topic data if needed
-      }
+        topic: {
+          include: {
+            subject: true,
+          },
+        },
+      },
     });
 
     return new Response(JSON.stringify(questions), {
@@ -57,9 +73,9 @@ export async function POST(request) {
         correctOptionIdx,
         topicId: parseInt(topicId),
         difficulty: difficulty || "medium",
-        tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
-        explanation: explanation || ""
-      }
+        tags: Array.isArray(tags) ? tags : tags ? [tags] : [],
+        explanation: explanation || "",
+      },
     });
 
     // Update topic question count
@@ -67,9 +83,9 @@ export async function POST(request) {
       where: { id: parseInt(topicId) },
       data: {
         noOfQuestions: {
-          increment: 1
-        }
-      }
+          increment: 1,
+        },
+      },
     });
 
     return new Response(JSON.stringify(newQuestion), {

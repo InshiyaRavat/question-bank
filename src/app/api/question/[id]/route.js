@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-export async function DELETE(_, { params }) {
+export async function DELETE(req, { params }) {
   const { id } = params;
 
   if (!id) {
@@ -14,10 +14,16 @@ export async function DELETE(_, { params }) {
   try {
     const questionId = parseInt(id);
 
-    // First get the question to access topicId
+    // Get admin info from request headers or auth
+    const adminId = req.headers.get("x-admin-id") || "unknown";
+
+    // First get the question to access topicId and check if it exists
     const existingQuestion = await prisma.question.findUnique({
-      where: { id: questionId },
-      select: { topicId: true },
+      where: {
+        id: questionId,
+        deletedAt: null, // Only find non-deleted questions
+      },
+      select: { topicId: true, questionText: true },
     });
 
     if (!existingQuestion) {
@@ -27,11 +33,15 @@ export async function DELETE(_, { params }) {
       });
     }
 
-    // Run delete and topic update in a transaction
-    const [deletedQuestion] = await prisma.$transaction([
-      // Step 1: Delete the question
-      prisma.question.delete({
+    // Run soft delete and topic update in a transaction
+    const [softDeletedQuestion] = await prisma.$transaction([
+      // Step 1: Soft delete the question
+      prisma.question.update({
         where: { id: questionId },
+        data: {
+          deletedAt: new Date(),
+          deletedBy: adminId,
+        },
         select: {
           id: true,
           topicId: true,
@@ -41,6 +51,8 @@ export async function DELETE(_, { params }) {
           explanation: true,
           difficulty: true,
           tags: true,
+          deletedAt: true,
+          deletedBy: true,
         },
       }),
 
@@ -55,12 +67,18 @@ export async function DELETE(_, { params }) {
       }),
     ]);
 
-    return new Response(JSON.stringify(deletedQuestion), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        ...softDeletedQuestion,
+        message: "Question moved to trash successfully",
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
-    console.error("Delete Question Error:", error);
+    console.error("Soft Delete Question Error:", error);
     return new Response(JSON.stringify({ error: "Failed to delete question" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

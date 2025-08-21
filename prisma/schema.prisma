@@ -35,6 +35,8 @@ model Question {
   explanation      String?
   difficulty       String?
   tags             String[]
+  deletedAt        DateTime?        @map("deleted_at")
+  deletedBy        String?          @map("deleted_by")
   comments         Comment[]
   topic            Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
   solvedQuestions  SolvedQuestion[]
@@ -63,9 +65,11 @@ model SolvedQuestion {
 }
 
 model Subject {
-  id     Int     @id @default(autoincrement())
-  name   String  @unique
-  topics Topic[]
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by")
+  topics    Topic[]
 }
 
 model Refund {
@@ -94,6 +98,8 @@ model Topic {
   name               String
   noOfQuestions      Int                 @default(0) @map("no_of_questions")
   subjectId          Int                 @map("subject_id")
+  deletedAt          DateTime?           @map("deleted_at")
+  deletedBy          String?             @map("deleted_by")
   attemptedQuestions AttemptedQuestion[]
   questions          Question[]
   subject            Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)

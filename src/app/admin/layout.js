@@ -4,10 +4,9 @@ import { redirect } from "next/navigation";
 
 export default async function AdminLayout({ children }) {
   const { sessionClaims } = await auth();
-  console.log(sessionClaims);
-  // if (sessionClaims.role !== "admin") {
-  //   return redirect("/");
-  // }
+  if (sessionClaims.metadata.role !== "admin") {
+    return redirect("/dashboard");
+  }
 
   return <AdminSidebarProvider>{children}</AdminSidebarProvider>;
 }

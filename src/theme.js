@@ -1,29 +1,32 @@
+// Legacy theme object for backward compatibility
+// New components should use useTheme() hook from ThemeContext instead
 export const THEME = {
-    // Primary colors 
-    primary: "#2563eb",      // Blue-600 - main brand color
-    primaryHover: "#1d4ed8", // Blue-700 - hover states
-    primaryLight: "#dbeafe", // Blue-100 - backgrounds
+  // Primary colors
+  primary: "var(--color-primary, #2563eb)",
+  primaryHover: "var(--color-primaryHover, #1d4ed8)",
+  primaryLight: "var(--color-primaryLight, #dbeafe)",
 
-    // Neutral colors 
-    neutral900: "#111827",   // Almost black - headings
-    neutral700: "#374151",   // Dark gray - body text
-    neutral500: "#6b7280",   // Medium gray - secondary text
-    neutral300: "#d1d5db",   // Light gray - borders
-    neutral100: "#f3f4f6",   // Very light gray - backgrounds
-    neutral50: "#f9fafb",    // Off white - page backgrounds
+  // Neutral colors
+  neutral900: "var(--color-neutral900, #111827)",
+  neutral700: "var(--color-neutral700, #374151)",
+  neutral500: "var(--color-neutral500, #6b7280)",
+  neutral300: "var(--color-neutral300, #d1d5db)",
+  neutral200: "var(--color-neutral200, #e5e7eb)",
+  neutral100: "var(--color-neutral100, #f3f4f6)",
+  neutral50: "var(--color-neutral50, #f9fafb)",
 
-    // Semantic colors
-    success: "#10b981",      // Green - success states
-    error: "#ef4444",        // Red - error states
-    warning: "#f59e0b",      // Amber - warning states
+  // Semantic colors
+  success: "var(--color-success, #10b981)",
+  error: "var(--color-error, #ef4444)",
+  warning: "var(--color-warning, #f59e0b)",
 
-    // Special colors
-    white: "#ffffff",
-    background: "#ffffff",   // Main page background
-    surface: "#f9fafb",     // Card/component backgrounds
+  // Special colors
+  white: "var(--color-white, #ffffff)",
+  background: "var(--color-background, #ffffff)",
+  surface: "var(--color-surface, #f9fafb)",
 
-    // Text colors
-    textPrimary: "#111827",
-    textSecondary: "#6b7280",
-    textMuted: "#9ca3af",
+  // Text colors
+  textPrimary: "var(--color-textPrimary, #111827)",
+  textSecondary: "var(--color-textSecondary, #6b7280)",
+  textMuted: "var(--color-textMuted, #9ca3af)",
 };

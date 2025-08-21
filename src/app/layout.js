@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { PlanProvider } from "@/context/PlanContext";
 import { AttemptedQuestionProvider } from "@/context/AttemptedQuestionContext";
 import { SelectedTopicsProvider } from "@/context/SelectedTopicsContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Inter } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -17,17 +18,19 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <PlanProvider>
-        <AttemptedQuestionProvider>
-          <SelectedTopicsProvider>
-            <ToastProvider>
-              <html lang="en">
-                <body className={`${inter.className} antialiased`}>{children}</body>
-              </html>
-            </ToastProvider>
-          </SelectedTopicsProvider>
-        </AttemptedQuestionProvider>
-      </PlanProvider>
+      <html lang="en">
+        <body className={`${inter.className} antialiased`}>
+          <ThemeProvider>
+            <PlanProvider>
+              <AttemptedQuestionProvider>
+                <SelectedTopicsProvider>
+                  <ToastProvider>{children}</ToastProvider>
+                </SelectedTopicsProvider>
+              </AttemptedQuestionProvider>
+            </PlanProvider>
+          </ThemeProvider>
+        </body>
+      </html>
     </ClerkProvider>
   );
 }

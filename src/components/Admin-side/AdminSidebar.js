@@ -14,6 +14,7 @@ import {
   Shield,
   Megaphone,
   Activity,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -31,6 +32,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { THEME } from "@/theme";
+import { useTheme } from "@/context/ThemeContext";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const adminNavItems = [
   {
@@ -58,10 +61,10 @@ const adminNavItems = [
     description: "Organize content structure",
   },
   {
-    title: "Analytics",
+    title: "User Analytics",
     url: "/admin/analytics",
     icon: BarChart3,
-    description: "Usage statistics",
+    description: "Individual user performance",
   },
   {
     title: "Comments & Replies",
@@ -87,6 +90,12 @@ const adminNavItems = [
     icon: Activity,
     description: "Admin activity tracking",
   },
+  {
+    title: "Trash Bin",
+    url: "/admin/trash",
+    icon: Trash2,
+    description: "Recover deleted items",
+  },
 ];
 
 const settingsItems = [
@@ -106,6 +115,7 @@ const settingsItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { colors } = useTheme();
 
   return (
     <Sidebar variant="inset" className="border-r">
@@ -113,15 +123,15 @@ export function AdminSidebar() {
         <div className="flex items-center gap-2">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
-            style={{ backgroundColor: THEME.primary }}
+            style={{ backgroundColor: colors.primary }}
           >
             <Shield className="h-4 w-4" />
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold" style={{ color: THEME.neutral900 }}>
+            <span className="truncate font-semibold" style={{ color: colors.neutral900 }}>
               Admin Panel
             </span>
-            <span className="truncate text-xs" style={{ color: THEME.textSecondary }}>
+            <span className="truncate text-xs" style={{ color: colors.textSecondary }}>
               Question Bank Management
             </span>
           </div>
@@ -130,7 +140,7 @@ export function AdminSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel style={{ color: THEME.textSecondary }}>Main Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel style={{ color: colors.textSecondary }}>Main Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {adminNavItems.map((item) => {
@@ -158,7 +168,7 @@ export function AdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel style={{ color: THEME.textSecondary }}>System</SidebarGroupLabel>
+          <SidebarGroupLabel style={{ color: colors.textSecondary }}>System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsItems.map((item) => {
@@ -185,11 +195,15 @@ export function AdminSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        <div className="flex items-center gap-2 rounded-lg p-2" style={{ backgroundColor: THEME.neutral50 }}>
+        <div
+          className="flex items-center justify-between gap-2 rounded-lg p-2"
+          style={{ backgroundColor: colors.neutral50 }}
+        >
           <div className="grid flex-1 text-left text-xs leading-tight">
-            <span style={{ color: THEME.textSecondary }}>Admin Dashboard v1.0</span>
-            <span style={{ color: THEME.textMuted }}>Question Bank System</span>
+            <span style={{ color: colors.textSecondary }}>Admin Dashboard v1.0</span>
+            <span style={{ color: colors.textMuted }}>Question Bank System</span>
           </div>
+          <ThemeToggle />
         </div>
       </SidebarFooter>
     </Sidebar>
@@ -197,11 +211,13 @@ export function AdminSidebar() {
 }
 
 export function AdminSidebarProvider({ children }) {
+  const { colors } = useTheme();
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
-        <main className="flex-1" style={{ backgroundColor: THEME.background }}>
+        <main className="flex-1" style={{ backgroundColor: colors.background }}>
           {children}
         </main>
       </div>
