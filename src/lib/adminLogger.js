@@ -203,11 +203,12 @@ export async function getAdminActivityLogs(filters = {}) {
     }),
     prisma.adminActivityLog.count({ where }),
   ]);
+  console.log(logs);
 
   // Parse JSON details
   const formattedLogs = logs.map((log) => ({
     ...log,
-    details: log.details ? JSON.parse(log.details) : null,
+    details: typeof log.details === "string" ? JSON.parse(log.details) : log.details || null,
   }));
 
   return {

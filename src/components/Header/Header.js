@@ -6,6 +6,7 @@ import { ArrowUpRight, ArrowDownLeft, RefreshCw, XCircle, Menu, X } from "lucide
 import { THEME } from "@/theme";
 import { useTheme } from "@/context/ThemeContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import DynamicLogo from "@/components/common/DynamicLogo";
 
 const Header = () => {
   const { colors } = useTheme();
@@ -83,9 +84,9 @@ const Header = () => {
         style={{ backgroundColor: colors.primary }}
       >
         <div>
-          <h2 className="text-3xl font-bold mb-6" style={{ color: colors.white }}>
-            📚 Question Bank
-          </h2>
+          <div className="mb-6">
+            <DynamicLogo fallbackText="Question Bank" size="xl" showText={true} className="text-white" />
+          </div>
           <nav className="flex flex-col gap-4">
             <SidebarButton
               name="renewal"

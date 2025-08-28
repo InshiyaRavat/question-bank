@@ -4,7 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, BookOpen, CreditCard, History, BarChart3 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarHeader } from "@/components/ui/sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+  SidebarHeader,
+} from "@/components/ui/sidebar";
+import DynamicLogo from "@/components/common/DynamicLogo";
 
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -21,7 +33,9 @@ export default function UserSidebar() {
     <SidebarProvider>
       <Sidebar className="bg-white border-r border-border min-h-screen w-64 flex flex-col shadow-lg lg:shadow-none">
         <SidebarHeader className="flex flex-col items-center py-4 lg:py-6 px-4">
-          <div className="text-xl lg:text-2xl font-bold mb-2 text-primary text-center">📚 Question Bank</div>
+          <div className="mb-2">
+            <DynamicLogo fallbackText="Question Bank" size="lg" showText={true} className="text-primary" />
+          </div>
           <UserButton />
         </SidebarHeader>
         <SidebarContent className="px-2 lg:px-0">

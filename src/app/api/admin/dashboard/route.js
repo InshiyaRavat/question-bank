@@ -63,6 +63,9 @@ export async function GET(req) {
       topTopics,
       recentSubscriptions,
       recentQuestionActivity,
+      totalFlaggedQuestions,
+      pendingFlags,
+      recentFlags,
     ] = await Promise.all([
       // Basic counts
       prisma.subscription.count(),
@@ -160,6 +163,21 @@ export async function GET(req) {
           isCorrect: true,
         },
         orderBy: { solvedAt: "asc" },
+      }),
+
+      // Flagged questions metrics
+      prisma.questionFlag.count(),
+      prisma.questionFlag.count({
+        where: { status: "pending" },
+      }),
+      prisma.questionFlag.findMany({
+        where: { createdAt: { gte: startDate } },
+        select: {
+          createdAt: true,
+          status: true,
+          reason: true,
+        },
+        orderBy: { createdAt: "asc" },
       }),
     ]);
 
@@ -327,6 +345,9 @@ export async function GET(req) {
         totalComments,
         trashItems,
         avgQuestionsPerTopic: totalTopics > 0 ? Math.round(totalQuestions / totalTopics) : 0,
+        totalFlaggedQuestions,
+        pendingFlags,
+        recentFlagsCount: recentFlags.length,
       },
       charts: {
         userGrowth: userGrowthChart,

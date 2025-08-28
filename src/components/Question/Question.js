@@ -6,8 +6,9 @@ import CountdownTimer from "../Timer/CountdownTimer";
 import Stopwatch from "../Timer/Stopwatch";
 import QuestionPalette from "./QuestionPalette";
 import Comment from "../Comment/Comment";
+import FlagQuestion from "./FlagQuestion";
 import { useRouter } from "next/navigation";
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from "next/navigation";
 
 const Question = (props) => {
   const [questions, setQuestions] = useState(null);
@@ -25,14 +26,13 @@ const Question = (props) => {
   const { isLoaded, isSignedIn, user } = useUser();
   const { selectedTopics } = useContext(SelectedTopicsContext);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [isRetest, setIsRetest] = useState(true);
+  const [isRetest, setIsRetest] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
-    const topicIds = Object.keys(selectedTopics).filter(
-      (id) => selectedTopics[id]
-    );
+    const topicIds = Object.keys(selectedTopics).filter((id) => selectedTopics[id]);
 
     if (!isRetest) {
       const queryParams = new URLSearchParams();
@@ -47,14 +47,14 @@ const Question = (props) => {
           const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, 50);
           setQuestions(shuffled);
 
+          // Create a new test session for non-practice modes
           if (type !== "practice") {
-            const ids = shuffled.map(q => q.id);
-            localStorage.setItem("lastTestQuestionIds", JSON.stringify(ids));
+            const questionIds = shuffled.map((q) => q.id);
+            createTestSession(questionIds);
           }
         })
         .catch((err) => console.error("Error fetching questions:", err));
     }
-
   }, [isLoaded, isSignedIn, user, selectedTopics, isRetest, type]);
 
   const searchParams = useSearchParams();
@@ -62,27 +62,90 @@ const Question = (props) => {
   useEffect(() => {
     const queryType = searchParams.get("type");
     const sw = searchParams.get("stopwatch");
-    const retest = searchParams.get("retest");
-    setIsRetest(retest === "true");
-    if (retest) {
-      console.log("Retest mode enabled");
-      const storedIds = JSON.parse(localStorage.getItem("lastTestQuestionIds") || "[]");
-      console.log("Stored Question IDs for Retest:", storedIds);
-      if (storedIds.length > 0) {
-        fetch(`/api/question-by-ids`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: storedIds })
-        })
-          .then(res => res.json())
-          .then(data => setQuestions(data))
-          .catch(err => console.error("Error fetching retest questions:", err));
-      }
-      return;
-    }
+    const sessionId = searchParams.get("sessionId");
+
     setType(queryType);
     setStopwatch(sw);
+
+    if (sessionId) {
+      setIsRetest(true);
+      setCurrentSessionId(sessionId);
+      handleRetestSession(sessionId);
+    }
   }, [searchParams]);
+
+  // Helper function to create a new test session
+  const createTestSession = async (questionIds) => {
+    try {
+      const response = await fetch("/api/test-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          testType: type,
+          questionIds,
+          totalQuestions: questionIds.length,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentSessionId(data.session.sessionId);
+        console.log("Test session created:", data.session.sessionId);
+      }
+    } catch (error) {
+      console.error("Error creating test session:", error);
+    }
+  };
+
+  // Helper function to handle retest session
+  const handleRetestSession = async (sessionId) => {
+    try {
+      const response = await fetch(`/api/test-session/${sessionId}/retest`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const questionIds = data.session.questionIds;
+
+        // Fetch questions by IDs
+        const questionsResponse = await fetch(`/api/question-by-ids`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: questionIds }),
+        });
+
+        if (questionsResponse.ok) {
+          const questionsData = await questionsResponse.json();
+          setQuestions(questionsData);
+          setCurrentSessionId(data.session.sessionId);
+        }
+      }
+    } catch (error) {
+      console.error("Error handling retest session:", error);
+    }
+  };
+
+  // Helper function to update test session
+  const updateTestSession = async (score, correctCount, incorrectCount, status = "completed") => {
+    if (!currentSessionId) return;
+
+    try {
+      await fetch("/api/test-session", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: currentSessionId,
+          score,
+          correctCount,
+          incorrectCount,
+          status,
+        }),
+      });
+    } catch (error) {
+      console.error("Error updating test session:", error);
+    }
+  };
 
   if (!questions) {
     return (
@@ -125,16 +188,10 @@ const Question = (props) => {
     if (isAnswerCorrect) {
       setScore((prev) => prev + 1);
       setCorrectCount((prev) => prev + 1);
-      setCorrectQuestions((prev) => [
-        ...prev,
-        questions[currentIndex].questionText,
-      ]);
+      setCorrectQuestions((prev) => [...prev, questions[currentIndex].questionText]);
     } else {
       setIncorrectCount((prev) => prev + 1);
-      setIncorrectQuestions((prev) => [
-        ...prev,
-        questions[currentIndex].questionText,
-      ]);
+      setIncorrectQuestions((prev) => [...prev, questions[currentIndex].questionText]);
     }
 
     await fetch(`/api/solved-question`, {
@@ -187,8 +244,7 @@ const Question = (props) => {
     );
   }
 
-  const currentQuestion =
-    questions && questions.length > 0 ? questions[currentIndex] : null;
+  const currentQuestion = questions && questions.length > 0 ? questions[currentIndex] : null;
 
   if (!currentQuestion) {
     return (
@@ -199,19 +255,32 @@ const Question = (props) => {
   }
 
   function endTest() {
+    // Update the test session if it exists
+    if (currentSessionId && type !== "practice") {
+      updateTestSession(score, correctCount, incorrectCount, "completed");
+    }
+
     localStorage.setItem("correctQuestions", correctQuestions);
     localStorage.setItem("incorrectQuestions", incorrectQuestions);
-    router.push(
-      `/result?score=${score}&incorrectCount=${incorrectCount}&correctCount=${correctCount}&type=${type}`
-    );
+
+    const params = new URLSearchParams({
+      score: score.toString(),
+      incorrectCount: incorrectCount.toString(),
+      correctCount: correctCount.toString(),
+      type: type,
+    });
+
+    if (currentSessionId) {
+      params.append("sessionId", currentSessionId);
+    }
+
+    router.push(`/result?${params.toString()}`);
   }
 
   return (
     <div className="flex flex-col text-[#001219]">
       <header className="flex justify-between items-center bg-[#0A9396] text-white px-6 py-4 shadow mb-4">
-        <h1 className="text-xl font-bold">
-          {type === "practice" ? "Practice Mode" : "Test Mode"}
-        </h1>
+        <h1 className="text-xl font-bold">{type === "practice" ? "Practice Mode" : "Test Mode"}</h1>
         <button
           className="bg-[#AE2012] hover:bg-[#9B2226] text-white font-semibold py-2 px-4 rounded-lg"
           onClick={endTest}
@@ -240,9 +309,12 @@ const Question = (props) => {
       <main className="flex flex-grow flex-col items-center px-4">
         <div className="flex flex-col lg:flex-row w-full max-w-6xl gap-6">
           <div className="bg-white shadow-lg rounded-xl p-6 flex-grow w-full lg:w-3/4">
-            <h4 className="text-xl font-semibold text-center text-[#005F73] mb-4">
-              {currentQuestion.questionText}
-            </h4>
+            <div className="flex justify-between items-start mb-4">
+              <h4 className="text-xl font-semibold text-[#005F73] flex-grow">{currentQuestion.questionText}</h4>
+              <div className="ml-4 flex-shrink-0">
+                <FlagQuestion questionId={currentQuestion.id} />
+              </div>
+            </div>
 
             <div className="space-y-3 mb-6">
               {currentQuestion.options.map((option, index) => {
@@ -256,11 +328,11 @@ const Question = (props) => {
                   ? !isTestMode && isCorrectAnswer
                     ? "bg-[#94D2BD] border-[#0A9396]"
                     : !isTestMode && isIncorrect
-                      ? "bg-[#EE9B00] border-[#CA6702]"
-                      : "bg-[#E9D8A6] border-[#BB3E03]"
+                    ? "bg-[#EE9B00] border-[#CA6702]"
+                    : "bg-[#E9D8A6] border-[#BB3E03]"
                   : !isTestMode && isAnswer && hasSubmitted
-                    ? "bg-[#94D2BD] border-[#0A9396]"
-                    : "bg-white border-gray-300";
+                  ? "bg-[#94D2BD] border-[#0A9396]"
+                  : "bg-white border-gray-300";
 
                 return (
                   <label
@@ -284,8 +356,9 @@ const Question = (props) => {
 
             <div className="flex flex-wrap justify-between items-center gap-4">
               <button
-                className={`bg-[#005F73] text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105 ${selectedOption === null && "bg-opacity-50 cursor-not-allowed"
-                  }`}
+                className={`bg-[#005F73] text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105 ${
+                  selectedOption === null && "bg-opacity-50 cursor-not-allowed"
+                }`}
                 onClick={handleSubmit}
                 disabled={selectedOption === null || hasSubmitted}
               >

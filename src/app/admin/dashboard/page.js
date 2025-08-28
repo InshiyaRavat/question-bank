@@ -22,6 +22,7 @@ import {
   CheckCircle,
   Clock,
   Trash2,
+  Flag,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -305,6 +306,39 @@ export default function AdminDashboard() {
               <p className="text-lg font-semibold">{contentMetrics.trashItems || 0}</p>
             </div>
             <Trash2 className="h-5 w-5 text-red-500" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Flagged Questions Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Flagged</p>
+              <p className="text-lg font-semibold">{contentMetrics.totalFlaggedQuestions || 0}</p>
+            </div>
+            <Flag className="h-5 w-5 text-orange-500" />
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Pending Review</p>
+              <p className="text-lg font-semibold text-red-600">{contentMetrics.pendingFlags || 0}</p>
+            </div>
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Recent Flags</p>
+              <p className="text-lg font-semibold">{contentMetrics.recentFlagsCount || 0}</p>
+            </div>
+            <Clock className="h-5 w-5 text-blue-500" />
           </div>
         </Card>
       </div>

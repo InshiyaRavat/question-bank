@@ -40,6 +40,7 @@ model Question {
   comments         Comment[]
   topic            Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
   solvedQuestions  SolvedQuestion[]
+  flags            QuestionFlag[]
 }
 
 model Reply {
@@ -86,16 +87,16 @@ model Refund {
 }
 
 model Subscription {
-  id                  Int      @id @default(autoincrement())
-  userId              String   @map("user_id")
-  status              String   // active, canceled, past_due, trialing, etc.
-  duration            Int      // in months (6 or 12)
-  stripeCustomerId    String   @map("stripe_customer_id")
+  id                   Int      @id @default(autoincrement())
+  userId               String   @map("user_id")
+  status               String // active, canceled, past_due, trialing, etc.
+  duration             Int // in months (6 or 12)
+  stripeCustomerId     String   @map("stripe_customer_id")
   stripeSubscriptionId String   @unique @map("stripe_subscription_id")
-  stripePriceId       String   @map("stripe_price_id")
-  subscribedAt        DateTime @default(now()) @map("subscribed_at")
-  currentPeriodEnd    DateTime @map("current_period_end")
-  cancelAtPeriodEnd   Boolean  @default(false) @map("cancel_at_period_end")
+  stripePriceId        String   @map("stripe_price_id")
+  subscribedAt         DateTime @default(now()) @map("subscribed_at")
+  currentPeriodEnd     DateTime @map("current_period_end")
+  cancelAtPeriodEnd    Boolean  @default(false) @map("cancel_at_period_end")
 }
 
 model Topic {
@@ -152,4 +153,59 @@ model AdminActivityLog {
   @@index([action])
   @@index([resource])
   @@index([timestamp])
+}
+
+model QuestionFlag {
+  id         Int       @id @default(autoincrement())
+  questionId Int       @map("question_id")
+  userId     String    @map("user_id")
+  username   String? // Store username for quick reference
+  reason     String // Reason for flagging (inappropriate, incorrect, unclear, etc.)
+  details    String? // Additional details from user
+  status     String    @default("pending") // pending, reviewed, dismissed, resolved
+  createdAt  DateTime  @default(now()) @map("created_at")
+  reviewedAt DateTime? @map("reviewed_at")
+  reviewedBy String?   @map("reviewed_by") // Admin ID who reviewed
+  adminNotes String?   @map("admin_notes") // Admin notes on the flag
+  question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, userId]) // Prevent duplicate flags from same user for same question
+  @@index([questionId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model TestSession {
+  id             Int       @id @default(autoincrement())
+  userId         String    @map("user_id")
+  sessionId      String    @unique @map("session_id") // Unique identifier for the test session
+  testType       String    @map("test_type") // timed, untimed, practice
+  questionIds    Json      @map("question_ids") // Array of question IDs in the test
+  startedAt      DateTime  @default(now()) @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+  score          Int       @default(0)
+  totalQuestions Int       @default(0) @map("total_questions")
+  correctCount   Int       @default(0) @map("correct_count")
+  incorrectCount Int       @default(0) @map("incorrect_count")
+  status         String    @default("active") // active, completed, abandoned
+  retestCount    Int       @default(0) @map("retest_count") // Number of times this session was retaken
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model SiteSettings {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String? // Store JSON or string values
+  type        String   @default("string") // string, json, base64, boolean
+  description String?
+  updatedBy   String?  @map("updated_by") // Admin ID who updated
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([key])
 }

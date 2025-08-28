@@ -15,6 +15,8 @@ import {
   Megaphone,
   Activity,
   Trash2,
+  Flag,
+  Image,
 } from "lucide-react";
 
 import {
@@ -73,6 +75,12 @@ const adminNavItems = [
     description: "Moderate discussions",
   },
   {
+    title: "Flagged Questions",
+    url: "/admin/flagged-questions",
+    icon: Flag,
+    description: "Review reported questions",
+  },
+  {
     title: "Announcements",
     url: "/admin/announcements",
     icon: Megaphone,
@@ -99,6 +107,12 @@ const adminNavItems = [
 ];
 
 const settingsItems = [
+  {
+    title: "Logo Management",
+    url: "/admin/logo",
+    icon: Image,
+    description: "Upload and manage site logo",
+  },
   {
     title: "System Settings",
     url: "/admin/settings",

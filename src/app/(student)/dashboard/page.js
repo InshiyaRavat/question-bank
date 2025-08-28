@@ -1,11 +1,12 @@
 "use client";
-import PerformanceOverview from "../../components/PerformanceOverview";
-import UpcomingTestReminders from "../../components/UpcomingTestReminders";
-import RecentActivityLogs from "../../components/RecentActivityLogs";
-import UserAnalytics from "../../components/UserAnalytics";
-import UserSidebar from "../../components/UserSidebar";
-import AnnouncementBanner from "../../components/Announcements/AnnouncementBanner";
-import AnnouncementWidget from "../../components/Announcements/AnnouncementWidget";
+import PerformanceOverview from "@/components/PerformanceOverview";
+import UpcomingTestReminders from "@/components/UpcomingTestReminders";
+import RecentActivityLogs from "@/components/RecentActivityLogs";
+import UserAnalytics from "@/components/UserAnalytics";
+import UserSidebar from "@/components/UserSidebar";
+import AnnouncementBanner from "@/components/Announcements/AnnouncementBanner";
+import AnnouncementWidget from "@/components/Announcements/AnnouncementWidget";
+import TestSessionHistory from "@/components/TestSessionHistory";
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
             <div className="lg:col-span-2 flex flex-col gap-4 lg:gap-8">
               <PerformanceOverview />
+              <TestSessionHistory />
               <UpcomingTestReminders />
               <UserAnalytics />
             </div>
