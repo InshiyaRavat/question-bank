@@ -11,7 +11,7 @@ export default function Page() {
 
   useEffect(() => {
     if (isSubscribed) {
-      router.push("/question");
+      router.push("/question-topic");
     }
   }, [isSubscribed, router]);
 
