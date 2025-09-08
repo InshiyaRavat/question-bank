@@ -40,10 +40,7 @@ export async function GET(req) {
       const response = {
         ...subscription,
         expiresAt,
-        daysRemaining: Math.max(
-          0,
-          Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-        ),
+        daysRemaining: Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))),
       };
       return NextResponse.json({ success: true, subscription: response });
     } catch (_e) {
@@ -58,14 +55,44 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { userid, status, duration } = body;
+    const {
+      userid,
+      status,
+      duration,
+      stripeCustomerId,
+      stripeSubscriptionId,
+      stripePriceId,
+      currentPeriodEnd,
+      subscribedAt,
+    } = body;
+
+    // Validate required fields
+    if (!userid || !status || !duration) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Missing required fields: userid, status, duration",
+        },
+        { status: 400 }
+      );
+    }
 
     const subscription = await prisma.subscription.create({
       data: {
         userId: userid,
         status,
         duration,
-        // subscribed_at will default to current time via Prisma schema
+        stripeCustomerId: stripeCustomerId || `temp_${userid}_${Date.now()}`,
+        stripeSubscriptionId: stripeSubscriptionId || `manual_${Date.now()}_${userid}`,
+        stripePriceId: stripePriceId || (duration === 6 ? "price_6month" : "price_12month"),
+        currentPeriodEnd: currentPeriodEnd
+          ? new Date(currentPeriodEnd)
+          : (() => {
+              const end = new Date();
+              end.setMonth(end.getMonth() + duration);
+              return end;
+            })(),
+        subscribedAt: subscribedAt ? new Date(subscribedAt) : new Date(),
       },
     });
 
