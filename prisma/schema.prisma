@@ -209,3 +209,18 @@ model SiteSettings {
 
   @@index([key])
 }
+
+model Feedback {
+  id          Int      @id @default(autoincrement())
+  userId      String   @map("user_id")
+  questionId  Int?     @map("question_id")
+  type        String   // 'report' or 'general'
+  feedback    String
+  screenshot  String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([questionId])
+  @@index([type])
+  @@index([createdAt])
+}

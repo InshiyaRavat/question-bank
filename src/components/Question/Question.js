@@ -8,6 +8,7 @@ import QuestionPalette from "./QuestionPalette";
 import Comment from "../Comment/Comment";
 import FlagQuestion from "./FlagQuestion";
 import { useRouter } from "next/navigation";
+import ReportIssueModal from "@/components/Feedback/ReportIssueModal";
 import { useSearchParams } from "next/navigation";
 
 const Question = (props) => {
@@ -29,6 +30,7 @@ const Question = (props) => {
   const [isRetest, setIsRetest] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const router = useRouter();
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
@@ -311,7 +313,13 @@ const Question = (props) => {
           <div className="bg-white shadow-lg rounded-xl p-6 flex-grow w-full lg:w-3/4">
             <div className="flex justify-between items-start mb-4">
               <h4 className="text-xl font-semibold text-[#005F73] flex-grow">{currentQuestion.questionText}</h4>
-              <div className="ml-4 flex-shrink-0">
+              <div className="ml-4 flex-shrink-0 flex items-center gap-2">
+                <button
+                  className="bg-[#9B2226] text-white font-semibold py-1.5 px-3 rounded-md hover:bg-[#AE2012]"
+                  onClick={() => setReportOpen(true)}
+                >
+                  Report Issue
+                </button>
                 <FlagQuestion questionId={currentQuestion.id} />
               </div>
             </div>
@@ -426,6 +434,12 @@ const Question = (props) => {
           </aside>
         </div>
       </main>
+
+      <ReportIssueModal
+        questionId={currentQuestion?.id}
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+      />
     </div>
   );
 };

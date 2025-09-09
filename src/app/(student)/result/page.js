@@ -2,6 +2,7 @@
 import { THEME } from "@/theme";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import EndTestFeedback from "@/components/Feedback/EndTestFeedback";
 
 export default function Result() {
   const [score, setScore] = useState(0);
@@ -189,6 +190,11 @@ export default function Result() {
             Retest
           </button>
         )}
+
+        <div className="mt-8 text-left">
+          <h3 className="text-lg font-semibold mb-2">Share feedback (optional)</h3>
+          <EndTestFeedback />
+        </div>
       </div>
     </div>
   );

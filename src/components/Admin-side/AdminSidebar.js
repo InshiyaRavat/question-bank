@@ -75,6 +75,12 @@ const adminNavItems = [
     description: "Moderate discussions",
   },
   {
+    title: "Feedback",
+    url: "/admin/feedback",
+    icon: MessageSquare,
+    description: "Report questions and feedback",
+  },
+  {
     title: "Flagged Questions",
     url: "/admin/flagged-questions",
     icon: Flag,
@@ -165,9 +171,8 @@ export function AdminSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={item.description}
-                      className={`hover:bg-blue-200 hover:text-sidebar-accent-foreground ${
-                        isActive ? "text-blue-700" : ""
-                      }`}
+                      className={`hover:bg-blue-200 hover:text-sidebar-accent-foreground ${isActive ? "text-blue-700" : ""
+                        }`}
                     >
                       <Link href={item.url} className="flex items-center gap-3">
                         <item.icon className="h-4 w-4" />
