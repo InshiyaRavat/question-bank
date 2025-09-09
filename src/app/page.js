@@ -11,7 +11,7 @@ export default function HomePage() {
       <header className="border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <DynamicLogo fallbackText="MedQuest" size="md" showText={true} className="text-slate-900" />
+            <DynamicLogo fallbackText="Question Bank" size="md" showText={true} className="text-slate-900" />
             <Link href="/sign-in">
               <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg cursor-pointer">
                 Start Studying
@@ -29,9 +29,7 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 leading-tight">
               Master Your{" "}
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Medical Studies
-              </span>
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">Exam Preparation</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-600 mb-8 max-w-3xl mx-auto leading-relaxed">
               Comprehensive question bank designed for medical students to excel in their studies and build clinical
@@ -63,7 +61,7 @@ export default function HomePage() {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Why Medical Students Choose MedQuest</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Why Learners Choose Question Bank</h2>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               Everything you need to excel in your medical education and build clinical expertise
             </p>
@@ -75,10 +73,7 @@ export default function HomePage() {
                   <Brain className="h-8 w-8 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-4">Comprehensive Questions</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Access 10,000+ carefully curated questions covering all major medical topics with detailed
-                  explanations and clinical correlations
-                </p>
+                <p className="text-slate-600 leading-relaxed">Access thousands of curated questions across topics, with detailed explanations and references.</p>
               </CardContent>
             </Card>
             <Card className="border-slate-200 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-white">
@@ -86,11 +81,8 @@ export default function HomePage() {
                 <div className="bg-gradient-to-br from-emerald-100 to-emerald-200 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <Heart className="h-8 w-8 text-emerald-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-4">Clinical Case Studies</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Practice with real patient scenarios and develop clinical reasoning skills essential for medical
-                  practice and patient care
-                </p>
+                <h3 className="text-xl font-bold text-slate-900 mb-4">Realistic Scenarios</h3>
+                <p className="text-slate-600 leading-relaxed">Practice with realistic scenarios to build exam-ready problem-solving instincts.</p>
               </CardContent>
             </Card>
             <Card className="border-slate-200 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-white">
@@ -99,10 +91,7 @@ export default function HomePage() {
                   <Clock className="h-8 w-8 text-purple-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-4">Smart Learning</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  AI-powered system adapts to your learning pace and focuses on your weak areas for maximum study
-                  efficiency and retention
-                </p>
+                <p className="text-slate-600 leading-relaxed">Adaptive tools focus on your weak areas for efficient learning and retention.</p>
               </CardContent>
             </Card>
           </div>
@@ -113,9 +102,7 @@ export default function HomePage() {
       <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Success Stories from Medical Students
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Success Stories</h2>
             <p className="text-xl text-slate-600">
               Join thousands of medical students who have excelled in their studies with confidence
             </p>
@@ -128,17 +115,14 @@ export default function HomePage() {
                     <Star key={i} className="h-5 w-5 text-yellow-500 fill-current" />
                   ))}
                 </div>
-                <p className="text-slate-600 mb-6 leading-relaxed">
-                  MedQuest helped me excel in my medical studies! The explanations are incredibly detailed and the
-                  question format is perfect for building clinical knowledge.
-                </p>
+                <p className="text-slate-600 mb-6 leading-relaxed">The explanations are detailed and the format is perfect for mastering concepts.</p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mr-4 shadow-lg">
                     <span className="text-white font-semibold">SM</span>
                   </div>
                   <div>
                     <p className="font-semibold text-slate-900">Sarah Martinez</p>
-                    <p className="text-sm text-slate-500">Medical Student, Johns Hopkins</p>
+                    <p className="text-sm text-slate-500">Learner</p>
                   </div>
                 </div>
               </CardContent>
@@ -150,17 +134,14 @@ export default function HomePage() {
                     <Star key={i} className="h-5 w-5 text-yellow-500 fill-current" />
                   ))}
                 </div>
-                <p className="text-slate-600 mb-6 leading-relaxed">
-                  The clinical cases are amazing! They really helped me develop the diagnostic thinking I needed for my
-                  medical education and clinical rotations.
-                </p>
+                <p className="text-slate-600 mb-6 leading-relaxed">Practice sets are amazing! They really helped me develop the thinking I needed.</p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mr-4 shadow-lg">
                     <span className="text-white font-semibold">JD</span>
                   </div>
                   <div>
                     <p className="font-semibold text-slate-900">James Davis</p>
-                    <p className="text-sm text-slate-500">Medical Student, Harvard Medical</p>
+                    <p className="text-sm text-slate-500">Learner</p>
                   </div>
                 </div>
               </CardContent>
@@ -172,17 +153,14 @@ export default function HomePage() {
                     <Star key={i} className="h-5 w-5 text-yellow-500 fill-current" />
                   ))}
                 </div>
-                <p className="text-slate-600 mb-6 leading-relaxed">
-                  The smart learning feature is a game-changer. It identified my weak areas and helped me focus my study
-                  time effectively for all my medical courses.
-                </p>
+                <p className="text-slate-600 mb-6 leading-relaxed">The smart learning feature is a game-changer. It identified my weak areas and helped me focus.</p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-4 shadow-lg">
                     <span className="text-white font-semibold">AL</span>
                   </div>
                   <div>
                     <p className="font-semibold text-slate-900">Anna Lee</p>
-                    <p className="text-sm text-slate-500">Medical Student, Stanford Medicine</p>
+                    <p className="text-sm text-slate-500">Learner</p>
                   </div>
                 </div>
               </CardContent>
@@ -196,7 +174,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Ready to Excel in Medical Studies?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Ready to Level Up?</h2>
             {/* <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
                             Join over 50,000 medical students who are already advancing their medical knowledge with MedQuest
                         </p> */}
@@ -231,34 +209,26 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Stethoscope className="h-6 w-6 text-blue-400" />
-                <span className="text-lg font-bold text-white">MedQuest</span>
+                <span className="text-lg font-bold text-white">Question Bank</span>
               </div>
-              <p className="text-slate-400">
-                Empowering medical students worldwide with comprehensive study materials and clinical knowledge.
-              </p>
+              <p className="text-slate-400">Practice smarter with curated questions, detailed explanations, and insightful analytics.</p>
             </div>
             <div>
               <h3 className="font-semibold text-white mb-4">Study Materials</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
+                  <a href="/questions" className="text-slate-400 hover:text-blue-400 transition-colors">
                     Question Bank
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
-                    Clinical Cases
-                  </a>
+                  <span className="text-slate-500">Practice Sets</span>
                 </li>
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
-                    Study Guides
-                  </a>
+                  <span className="text-slate-500">Study Guides</span>
                 </li>
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
-                    Practice Tests
-                  </a>
+                  <a href="/questions?type=timed" className="text-slate-400 hover:text-blue-400 transition-colors">Practice Tests</a>
                 </li>
               </ul>
             </div>
@@ -291,32 +261,29 @@ export default function HomePage() {
               <h3 className="font-semibold text-white mb-4">Support</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
-                    Help Center
-                  </a>
+                  <a href="/help" className="text-slate-400 hover:text-blue-400 transition-colors">Help Center</a>
                 </li>
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
-                    Study Groups
-                  </a>
+                  <span className="text-slate-500">Study Groups</span>
                 </li>
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
-                    Contact Us
-                  </a>
+                  <a href="/contact" className="text-slate-400 hover:text-blue-400 transition-colors">Contact Us</a>
                 </li>
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
-                    FAQ
-                  </a>
+                  <a href="/help#faq" className="text-slate-400 hover:text-blue-400 transition-colors">FAQ</a>
                 </li>
               </ul>
             </div>
           </div>
           <div className="border-t border-slate-800 mt-8 pt-8 text-center">
-            <p className="text-slate-400">
-              © 2025 MedQuest. All rights reserved. Empowering the next generation of physicians.
-            </p>
+            <p className="text-slate-400">© 2025 Question Bank Inc. All rights reserved.</p>
+            <p className="text-slate-500 text-xs mt-1">Question Bank Inc., 123 Study Lane, Learn City, ED 45678</p>
+            <div className="mt-2 text-xs text-slate-500 space-x-4">
+              <a href="/about" className="hover:text-blue-400">About</a>
+              <a href="/privacy" className="hover:text-blue-400">Privacy</a>
+              <a href="/terms" className="hover:text-blue-400">Terms</a>
+              <a href="/contact" className="hover:text-blue-400">Contact</a>
+            </div>
           </div>
         </div>
       </footer>
