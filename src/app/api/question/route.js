@@ -6,6 +6,35 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
+    const topicIds = searchParams.getAll("topicId");
+    const count = searchParams.get("count");
+    const questionCount = parseInt(searchParams.get("questionCount")) || 50;
+
+    // If only count is requested, return total count
+    if (count === "true") {
+      const whereClause = {
+        deletedAt: null,
+        topic: {
+          deletedAt: null,
+          subject: {
+            deletedAt: null,
+          },
+        },
+      };
+
+      if (topicIds.length > 0) {
+        whereClause.topicId = { in: topicIds.map(id => parseInt(id)) };
+      }
+
+      const totalCount = await prisma.question.count({
+        where: whereClause,
+      });
+
+      return new Response(JSON.stringify({ total: totalCount }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "User ID is required" }), {
@@ -14,22 +43,22 @@ export async function GET(request) {
       });
     }
 
-    const questions = await prisma.question.findMany({
-      where: {
-        AND: [
-          {
-            deletedAt: null,
-          },
-          {
-            topic: {
-              deletedAt: null,
-              subject: {
-                deletedAt: null,
-              },
-            },
-          },
-        ],
+    const whereClause = {
+      deletedAt: null,
+      topic: {
+        deletedAt: null,
+        subject: {
+          deletedAt: null,
+        },
       },
+    };
+
+    if (topicIds.length > 0) {
+      whereClause.topicId = { in: topicIds.map(id => parseInt(id)) };
+    }
+
+    const questions = await prisma.question.findMany({
+      where: whereClause,
       include: {
         topic: {
           include: {
@@ -37,9 +66,13 @@ export async function GET(request) {
           },
         },
       },
+      take: questionCount,
     });
 
-    return new Response(JSON.stringify(questions), {
+    // Shuffle questions for variety
+    const shuffledQuestions = questions.sort(() => 0.5 - Math.random());
+
+    return new Response(JSON.stringify(shuffledQuestions), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

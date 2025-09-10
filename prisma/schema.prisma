@@ -225,3 +225,58 @@ model Feedback {
   @@index([type])
   @@index([createdAt])
 }
+
+model StudyPlan {
+  id              Int      @id @default(autoincrement())
+  userId          String   @map("user_id")
+  planType        String   @map("plan_type") // '25-day', '50-day', 'custom'
+  totalDays       Int      @map("total_days")
+  totalQuestions  Int      @map("total_questions")
+  questionsPerDay Int      @map("questions_per_day")
+  startDate       DateTime @map("start_date")
+  endDate         DateTime @map("end_date")
+  status          String   @default("active") // 'active', 'paused', 'completed', 'cancelled'
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  dailyProgress   DailyProgress[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model DailyProgress {
+  id                  Int       @id @default(autoincrement())
+  userId              String    @map("user_id")
+  planId              Int       @map("plan_id")
+  date                DateTime  @map("date")
+  questionsCompleted  Int       @default(0) @map("questions_completed")
+  questionsTarget     Int       @map("questions_target")
+  accuracy            Float     @default(0.0)
+  timeSpent           Int       @default(0) @map("time_spent") // in minutes
+  streak              Int       @default(0)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  
+  plan                StudyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([planId])
+  @@index([date])
+  @@unique([userId, planId, date])
+}
+
+model Achievement {
+  id          Int      @id @default(autoincrement())
+  userId      String   @map("user_id")
+  type        String   // 'plan_completion', 'streak', 'accuracy', 'questions_milestone'
+  title       String
+  description String
+  icon        String?  // emoji or icon name
+  earnedAt    DateTime @default(now()) @map("earned_at")
+  metadata    Json?    // additional data like streak count, accuracy percentage, etc.
+
+  @@index([userId])
+  @@index([type])
+  @@index([earnedAt])
+}

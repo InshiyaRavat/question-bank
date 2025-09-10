@@ -7,6 +7,7 @@ import UserSidebar from "@/components/UserSidebar";
 import AnnouncementBanner from "@/components/Announcements/AnnouncementBanner";
 import AnnouncementWidget from "@/components/Announcements/AnnouncementWidget";
 import TestSessionHistory from "@/components/TestSessionHistory";
+import ProgressWidget from "@/components/StudyPlan/ProgressWidget";
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
               <div className="xl:col-span-3 flex flex-col gap-6">
+                <ProgressWidget />
                 <PerformanceOverview />
                 <TestSessionHistory />
                 <UserAnalytics />

@@ -14,6 +14,7 @@ export default function Result() {
   const [type, setType] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [testSession, setTestSession] = useState(null);
+  const [currentPlan, setCurrentPlan] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -54,7 +55,53 @@ export default function Result() {
     };
 
     fetchSessionDetails();
+    fetchCurrentPlan();
   }, []);
+
+  const fetchCurrentPlan = async () => {
+    try {
+      const response = await fetch("/api/study-plan");
+      const data = await response.json();
+      setCurrentPlan(data.plan);
+      
+      // Update study plan progress for practice sessions
+      if (type === "practice" && data.plan) {
+        updateStudyPlanProgress(data.plan.id);
+      }
+    } catch (error) {
+      console.error("Error fetching study plan:", error);
+    }
+  };
+
+  const updateStudyPlanProgress = async (planId) => {
+    try {
+      const accuracy = totalQuestions > 0 ? (score / totalQuestions) * 100 : 0;
+      const timeSpent = 5; // Estimate 5 minutes for practice session
+
+      console.log("Updating study plan progress from result page:", {
+        planId,
+        questionsCompleted: totalQuestions,
+        accuracy,
+        timeSpent
+      });
+
+      const response = await fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: planId,
+          questionsCompleted: totalQuestions,
+          accuracy: accuracy,
+          timeSpent: timeSpent
+        })
+      });
+
+      const data = await response.json();
+      console.log("Study plan progress update response from result page:", data);
+    } catch (error) {
+      console.error("Error updating study plan progress:", error);
+    }
+  };
 
   const totalQuestions = testSession ? testSession.totalQuestions : (correct + incorrect);
   const percentage = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(2) : 0;

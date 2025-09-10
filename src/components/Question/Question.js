@@ -9,6 +9,7 @@ import Comment from "../Comment/Comment";
 import FlagQuestion from "./FlagQuestion";
 import { useRouter } from "next/navigation";
 import ReportIssueModal from "@/components/Feedback/ReportIssueModal";
+import QuestionCountSelector from "./QuestionCountSelector";
 import { useSearchParams } from "next/navigation";
 
 const Question = (props) => {
@@ -32,12 +33,24 @@ const Question = (props) => {
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const router = useRouter();
   const [reportOpen, setReportOpen] = useState(false);
+  const [showCountSelector, setShowCountSelector] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState(null);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
+    
+    // Fetch current study plan
+    fetchCurrentPlan();
+    
     const topicIds = Object.keys(selectedTopics).filter((id) => selectedTopics[id]);
 
     if (!isRetest) {
+      // Show count selector for practice mode
+      if (type === "practice") {
+        setShowCountSelector(true);
+        return;
+      }
+
       const queryParams = new URLSearchParams();
       queryParams.append("userId", user.id);
       topicIds.forEach((id) => queryParams.append("topicId", id));
@@ -59,6 +72,73 @@ const Question = (props) => {
         .catch((err) => console.error("Error fetching questions:", err));
     }
   }, [isLoaded, isSignedIn, user, selectedTopics, isRetest, type]);
+
+  const fetchCurrentPlan = async () => {
+    try {
+      const response = await fetch("/api/study-plan");
+      const data = await response.json();
+      setCurrentPlan(data.plan);
+    } catch (error) {
+      console.error("Error fetching study plan:", error);
+    }
+  };
+
+  const handleStartPractice = async (questionCount) => {
+    setShowCountSelector(false);
+    
+    const topicIds = Object.keys(selectedTopics).filter((id) => selectedTopics[id]);
+    const queryParams = new URLSearchParams();
+    queryParams.append("userId", user.id);
+    queryParams.append("questionCount", questionCount.toString());
+    topicIds.forEach((id) => queryParams.append("topicId", id));
+
+    const queryString = queryParams.toString();
+
+    try {
+      const response = await fetch(`/api/question?${queryString}`);
+      const data = await response.json();
+      const shuffled = data.sort(() => 0.5 - Math.random());
+      setQuestions(shuffled);
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+    }
+  };
+
+  const updateStudyPlanProgress = async (score, correctCount, incorrectCount) => {
+    if (!currentPlan) {
+      console.log("No current plan found, skipping progress update");
+      return;
+    }
+
+    try {
+      const accuracy = questions && questions.length > 0 ? (correctCount / questions.length) * 100 : 0;
+      const timeSpent = 5; // Estimate 5 minutes for practice session
+      const questionsCompleted = questions ? questions.length : 0;
+
+      console.log("Updating study plan progress:", {
+        planId: currentPlan.id,
+        questionsCompleted,
+        accuracy,
+        timeSpent
+      });
+
+      const response = await fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: currentPlan.id,
+          questionsCompleted: questionsCompleted,
+          accuracy: accuracy,
+          timeSpent: timeSpent
+        })
+      });
+
+      const data = await response.json();
+      console.log("Study plan progress update response:", data);
+    } catch (error) {
+      console.error("Error updating study plan progress:", error);
+    }
+  };
 
   const searchParams = useSearchParams();
 
@@ -284,6 +364,11 @@ const Question = (props) => {
       updateTestSession(score, correctCount, incorrectCount, "completed");
     }
 
+    // Update study plan progress for practice sessions
+    if (type === "practice" && currentPlan) {
+      updateStudyPlanProgress(score, correctCount, incorrectCount);
+    }
+
     localStorage.setItem("correctQuestions", correctQuestions);
     localStorage.setItem("incorrectQuestions", incorrectQuestions);
 
@@ -299,6 +384,18 @@ const Question = (props) => {
     }
 
     router.push(`/result?${params.toString()}`);
+  }
+
+  // Show count selector for practice mode
+  if (showCountSelector) {
+    return (
+      <QuestionCountSelector
+        onStartPractice={handleStartPractice}
+        onClose={() => router.push("/question-topic")}
+        selectedTopics={selectedTopics}
+        currentPlan={currentPlan}
+      />
+    );
   }
 
   return (

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Plan Features Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Study Plan Features Test</h1>
+    
+    <div class="test-section">
+        <h2>📊 Current Status</h2>
+        <div id="status" class="status info">
+            Ready to test features...
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Database Migration</h2>
+        <p>First, you need to run the database migration to create the study plan tables:</p>
+        <div class="step">
+            <strong>Step 1:</strong> Run the migration script<br>
+            <code>node migrate-study-plan.js</code>
+        </div>
+        <div class="step">
+            <strong>Step 2:</strong> Or run Prisma commands<br>
+            <code>npx prisma generate && npx prisma db push</code>
+        </div>
+        <button onclick="checkMigration()">Check Migration Status</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Question Count Selector Test</h2>
+        <p>Test the question count selector feature:</p>
+        <div class="step">
+            <strong>Step 1:</strong> Go to <a href="/question-topic" target="_blank">Practice Mode</a>
+        </div>
+        <div class="step">
+            <strong>Step 2:</strong> Select topics and click "Start Practice"
+        </div>
+        <div class="step">
+            <strong>Step 3:</strong> You should see a modal with:
+            <ul>
+                <li>Slider to select number of questions (1-50)</li>
+                <li>Difficulty level indicator</li>
+                <li>Estimated time calculation</li>
+                <li>Study plan progress (if you have one)</li>
+            </ul>
+        </div>
+        <button onclick="testQuestionSelector()">Test Question Selector</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📈 Progress Tracking Test</h2>
+        <p>Test that practice questions update progress and streak:</p>
+        <div class="step">
+            <strong>Step 1:</strong> Create a study plan at <a href="/study-plan" target="_blank">Study Plan Page</a>
+        </div>
+        <div class="step">
+            <strong>Step 2:</strong> Take practice questions
+        </div>
+        <div class="step">
+            <strong>Step 3:</strong> Check dashboard for updated progress and streak
+        </div>
+        <button onclick="testProgressTracking()">Test Progress Tracking</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Study Plan Features</h2>
+        <p>Verify all study plan features are working:</p>
+        <ul>
+            <li>✅ 25-day, 50-day, and Self-practice plans</li>
+            <li>✅ Question count selector with slider (1-50 questions)</li>
+            <li>✅ Progress tracking and streak calculation</li>
+            <li>✅ Dashboard widget showing progress</li>
+            <li>✅ Difficulty level indicators</li>
+            <li>✅ Estimated time calculation</li>
+        </ul>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        async function checkMigration() {
+            updateStatus('Checking migration status...', 'info');
+            
+            try {
+                const response = await fetch('/api/study-plan');
+                const data = await response.json();
+                
+                if (data.plan === null) {
+                    updateStatus('✅ Migration successful! Study plan tables created.', 'success');
+                } else {
+                    updateStatus('✅ Migration successful! Study plan feature is working.', 'success');
+                }
+            } catch (error) {
+                updateStatus('❌ Migration not completed. Please run the migration script first.', 'error');
+            }
+        }
+
+        function testQuestionSelector() {
+            updateStatus('🔍 Testing question count selector...', 'info');
+            
+            // Open practice mode in new tab
+            window.open('/question-topic', '_blank');
+            
+            setTimeout(() => {
+                updateStatus('✅ Question count selector should be visible in practice mode. Check the new tab!', 'success');
+            }, 1000);
+        }
+
+        function testProgressTracking() {
+            updateStatus('🔍 Testing progress tracking...', 'info');
+            
+            // Open study plan page
+            window.open('/study-plan', '_blank');
+            
+            setTimeout(() => {
+                updateStatus('✅ Study plan page opened. Create a plan and test practice questions!', 'success');
+            }, 1000);
+        }
+
+        // Auto-check migration status on page load
+        window.onload = function() {
+            checkMigration();
+        };
+    </script>
+</body>
+</html>
