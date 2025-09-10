@@ -24,6 +24,7 @@ const Question = (props) => {
   const [incorrectCount, setIncorrectCount] = useState(0);
   const [correctQuestions, setCorrectQuestions] = useState([]);
   const [incorrectQuestions, setIncorrectQuestions] = useState([]);
+  const [topicStats, setTopicStats] = useState({});
   const { isLoaded, isSignedIn, user } = useUser();
   const { selectedTopics } = useContext(SelectedTopicsContext);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -128,22 +129,43 @@ const Question = (props) => {
     }
   };
 
+  // Track per-topic stats as answers are submitted
+  useEffect(() => {
+    if (!questions || questions.length === 0) return;
+    const stats = {};
+    const update = (qidList, isCorrectFlag) => {
+      qidList.forEach((qid) => {
+        const q = questions.find((qq) => qq.id == qid);
+        if (!q) return;
+        const topicId = q.topicId;
+        if (!stats[topicId]) stats[topicId] = { correct: 0, wrong: 0, total: 0 };
+        if (isCorrectFlag) stats[topicId].correct += 1; else stats[topicId].wrong += 1;
+        stats[topicId].total += 1;
+      });
+    };
+    update(correctQuestions, true);
+    update(incorrectQuestions, false);
+    console.log("Computed topicStats:", stats);
+    setTopicStats(stats);
+  }, [questions, correctQuestions, incorrectQuestions]);
+
   // Helper function to update test session
   const updateTestSession = async (score, correctCount, incorrectCount, status = "completed") => {
     if (!currentSessionId) return;
 
+    console.log("Updating test session with topicStats:", topicStats);
     try {
-      await fetch("/api/test-session", {
+      const response = await fetch("/api/test-session", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: currentSessionId,
-          score,
-          correctCount,
-          incorrectCount,
-          status,
-        }),
+        body: JSON.stringify({ sessionId: currentSessionId, score, correctCount, incorrectCount, status, topicStats }),
       });
+      
+      if (response.ok) {
+        console.log("Test session updated successfully");
+      } else {
+        console.error("Failed to update test session:", response.status);
+      }
     } catch (error) {
       console.error("Error updating test session:", error);
     }

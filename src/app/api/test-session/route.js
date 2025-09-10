@@ -105,7 +105,9 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { sessionId, score, correctCount, incorrectCount, status } = body;
+    const { sessionId, score, correctCount, incorrectCount, status, topicStats } = body;
+    
+    console.log("Test session update - topicStats received:", topicStats);
 
     if (!sessionId) {
       return new Response(JSON.stringify({ error: "Session ID is required" }), {
@@ -131,6 +133,7 @@ export async function PUT(request) {
     if (score !== undefined) updateData.score = score;
     if (correctCount !== undefined) updateData.correctCount = correctCount;
     if (incorrectCount !== undefined) updateData.incorrectCount = incorrectCount;
+    if (topicStats !== undefined) updateData.topicStats = topicStats;
     if (status !== undefined) {
       updateData.status = status;
       if (status === "completed") {

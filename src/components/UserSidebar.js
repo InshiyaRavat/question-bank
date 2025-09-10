@@ -21,6 +21,7 @@ import DynamicLogo from "@/components/common/DynamicLogo";
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Question Topics", url: "/question-topic", icon: BookOpen },
+  { title: "Personalized Report", url: "/personalized-report", icon: BarChart3 },
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Subscription", url: "/subscription", icon: CreditCard },
   { title: "Billing History", url: "/billing-history", icon: History },

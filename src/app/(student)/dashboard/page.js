@@ -32,7 +32,7 @@ export default function DashboardPage() {
         className={`
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0
-        fixed lg:relative
+        fixed lg:sticky lg:top-0
         w-64 flex-shrink-0 h-full
         transition-transform duration-300 ease-in-out
         z-40
@@ -48,27 +48,34 @@ export default function DashboardPage() {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-screen flex flex-col lg:ml-0">
+      <div className="flex-1 min-h-screen flex flex-col lg:ml-0 overflow-auto">
         <div className="p-4 lg:p-8">
           {/* Announcement Banner */}
           <div className="mb-6">
             <AnnouncementBanner />
           </div>
 
-          <h1 className="text-2xl lg:text-3xl font-bold mb-6 lg:mb-10 text-primary text-center mt-8 lg:mt-0">
-            User Dashboard
-          </h1>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-            <div className="lg:col-span-2 flex flex-col gap-4 lg:gap-8">
-              <PerformanceOverview />
-              <TestSessionHistory />
-              <UpcomingTestReminders />
-              <UserAnalytics />
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-8">
+              <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-2">
+                Welcome to your Dashboard
+              </h1>
+              <p className="text-slate-600 text-lg">
+                Track your progress, view analytics, and manage your learning journey
+              </p>
             </div>
-            <div className="flex flex-col gap-4 lg:gap-8">
-              <AnnouncementWidget />
-              <RecentActivityLogs />
+
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+              <div className="xl:col-span-3 flex flex-col gap-6">
+                <PerformanceOverview />
+                <TestSessionHistory />
+                <UserAnalytics />
+              </div>
+              <div className="flex flex-col gap-6">
+                <AnnouncementWidget />
+                <UpcomingTestReminders />
+                <RecentActivityLogs />
+              </div>
             </div>
           </div>
         </div>

@@ -190,6 +190,7 @@ model TestSession {
   incorrectCount Int       @default(0) @map("incorrect_count")
   status         String    @default("active") // active, completed, abandoned
   retestCount    Int       @default(0) @map("retest_count") // Number of times this session was retaken
+  topicStats     Json?     @map("topic_stats") // per-topic { [topicId]: { correct, wrong, total } }
 
   @@index([userId])
   @@index([sessionId])

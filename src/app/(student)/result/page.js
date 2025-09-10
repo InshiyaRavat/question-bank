@@ -56,7 +56,8 @@ export default function Result() {
     fetchSessionDetails();
   }, []);
 
-  const percentage = ((score / 50) * 100).toFixed(2);
+  const totalQuestions = testSession ? testSession.totalQuestions : (correct + incorrect);
+  const percentage = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(2) : 0;
 
   const handleRetest = () => {
     if (sessionId) {
@@ -99,7 +100,7 @@ export default function Result() {
 
         <div className="flex flex-col items-center gap-4">
           <div className={`text-4xl font-bold`} style={{ color: THEME.textPrimary }}>
-            ⭐ {score} / 50
+            ⭐ {score} / {totalQuestions}
           </div>
           <p className={`text-lg font-medium`} style={{ color: THEME.textSecondary }}>
             Total Score
@@ -113,7 +114,7 @@ export default function Result() {
               ❌ Incorrect: {incorrect}
             </div>
             <div className={`bg-amber-100 rounded-xl px-4 py-2 shadow font-semibold`} style={{ color: THEME.warning }}>
-              ❓ Unattempted: {50 - (correct + incorrect)}
+              ❓ Unattempted: {totalQuestions - (correct + incorrect)}
             </div>
           </div>
 
