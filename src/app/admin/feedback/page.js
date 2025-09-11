@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UserButton, useUser } from "@clerk/nextjs";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { THEME } from "@/theme";
@@ -20,14 +19,14 @@ export default function AdminFeedbackPage() {
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const { isLoaded, isSignedIn, user } = useUser();
-  const [username, setUsername] = useState("");
+  // const { isLoaded, isSignedIn, user } = useUser();
+  // const [username, setUsername] = useState("");
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      setUsername(user.username || "");
-    }
-  }, [isLoaded, user, isSignedIn]);
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn && user) {
+  //     setUsername(user.username || "");
+  //   }
+  // }, [isLoaded, user, isSignedIn]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -70,7 +69,7 @@ export default function AdminFeedbackPage() {
           </h1>
         </div>
 
-        {/* Profile Section */}
+        {/* Profile Section
         <div className="ml-auto flex items-center gap-4 px-4">
           <div className="flex items-center gap-3">
             <UserButton />
@@ -78,7 +77,7 @@ export default function AdminFeedbackPage() {
               {username}
             </span>
           </div>
-        </div>
+        </div> */}
       </header>
       <div className="p-6 space-y-4">
         <Card>
@@ -113,16 +112,16 @@ export default function AdminFeedbackPage() {
                     <Button variant="destructive" size="sm" onClick={() => onDelete(fb.id)}>Delete</Button>
                   </div>
                   <div className="mt-2 text-sm whitespace-pre-line">{fb.feedback}</div>
-                {fb.screenshot && (
-                  <div className="mt-2">
-                    <img 
-                      src={fb.screenshot} 
-                      alt="Screenshot" 
-                      className="max-w-xs max-h-32 object-contain border rounded cursor-pointer hover:opacity-80 transition-opacity" 
-                      onClick={() => setSelectedImage(fb.screenshot)}
-                    />
-                  </div>
-                )}
+                  {fb.screenshot && (
+                    <div className="mt-2">
+                      <img
+                        src={fb.screenshot}
+                        alt="Screenshot"
+                        className="max-w-xs max-h-32 object-contain border rounded cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setSelectedImage(fb.screenshot)}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -146,9 +145,9 @@ export default function AdminFeedbackPage() {
             </DialogHeader>
             <div className="p-6 pt-0 flex justify-center">
               {selectedImage && (
-                <img 
-                  src={selectedImage} 
-                  alt="Screenshot" 
+                <img
+                  src={selectedImage}
+                  alt="Screenshot"
                   className="max-w-full max-h-[70vh] object-contain rounded"
                 />
               )}

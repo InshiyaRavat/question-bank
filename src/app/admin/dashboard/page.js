@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -13,13 +12,10 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  BookOpen,
   FileQuestion,
-  Calendar,
   Download,
   RefreshCw,
   AlertTriangle,
-  CheckCircle,
   Clock,
   Trash2,
   Flag,
@@ -32,7 +28,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   BarChart,
   Bar,
   PieChart,
@@ -41,7 +36,6 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { THEME } from "@/theme";
 import { useTheme } from "@/context/ThemeContext";
 import { toast, ToastContainer } from "react-toastify";
 

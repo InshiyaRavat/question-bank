@@ -8,6 +8,19 @@ export async function GET(req) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
 
+    // Get accuracy threshold from settings
+    let accuracyThreshold = 50; // Default value
+    try {
+      const settings = await prisma.settings.findUnique({
+        where: { key: "accuracyThreshold" }
+      });
+      if (settings) {
+        accuracyThreshold = parseInt(settings.value) || 50;
+      }
+    } catch (error) {
+      console.log("Could not fetch accuracy threshold, using default:", error.message);
+    }
+
     const sessions = await prisma.testSession.findMany({
       where: { userId, status: "completed" },
       orderBy: { startedAt: "desc" },
@@ -90,13 +103,16 @@ export async function GET(req) {
       .map(([topicId, s]) => {
         const total = s.total || (s.correct + s.wrong);
         const accuracy = total > 0 ? Math.round((s.correct / total) * 100) : 0;
-        const needsAttention = total > 0 && accuracy < 50; // Needs attention if accuracy is less than 50%
+        const needsAttention = total > 0 && accuracy < accuracyThreshold; // Uses configurable threshold
         return { topicId: Number(topicId), topicName: idToName[topicId] || `Topic ${topicId}`, correct: s.correct, wrong: s.wrong, total, accuracy, needsAttention };
       })
       .sort((a, b) => a.accuracy - b.accuracy);
 
     return new Response(
-      JSON.stringify({ report: { totalAttempts, history, topics: topicsReport } }),
+      JSON.stringify({ 
+        report: { totalAttempts, history, topics: topicsReport },
+        accuracyThreshold 
+      }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (e) {

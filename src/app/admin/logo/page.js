@@ -11,7 +11,7 @@ import { THEME } from "@/theme";
 
 export default function LogoManagementPage() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const [username, setUsername] = useState("");
+  // const [username, setUsername] = useState("");
   const [currentLogo, setCurrentLogo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -19,11 +19,11 @@ export default function LogoManagementPage() {
   const [uploadStatus, setUploadStatus] = useState(null);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      setUsername(user.username || "");
-    }
-  }, [isLoaded, user, isSignedIn]);
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn && user) {
+  //     setUsername(user.username || "");
+  //   }
+  // }, [isLoaded, user, isSignedIn]);
 
   const fetchCurrentLogo = async () => {
     try {
@@ -209,14 +209,14 @@ export default function LogoManagementPage() {
         </div>
 
         {/* Profile Section */}
-        <div className="ml-auto flex items-center gap-4 px-4">
+        {/* <div className="ml-auto flex items-center gap-4 px-4">
           <div className="flex items-center gap-3">
             <UserButton />
             <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
               {username}
             </span>
           </div>
-        </div>
+        </div> */}
       </header>
 
       {/* MAIN CONTENT */}
@@ -226,9 +226,8 @@ export default function LogoManagementPage() {
             {/* Status Messages */}
             {uploadStatus && (
               <Alert
-                className={`mb-6 ${
-                  uploadStatus.type === "error" ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"
-                }`}
+                className={`mb-6 ${uploadStatus.type === "error" ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"
+                  }`}
               >
                 {uploadStatus.type === "error" ? (
                   <AlertCircle className="h-4 w-4 text-red-600" />

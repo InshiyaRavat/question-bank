@@ -1,7 +1,8 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser, UserButton } from "@clerk/nextjs";
 import {
   LayoutDashboard,
   Users,
@@ -33,7 +34,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { THEME } from "@/theme";
 import { useTheme } from "@/context/ThemeContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -136,23 +136,25 @@ const settingsItems = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const { colors } = useTheme();
+  const { user, isLoaded, isSignedIn } = useUser();
+  const [username, setUsername] = useState("");
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      setUsername(user.username || "");
+    }
+  }, [isLoaded, user, isSignedIn]);
 
   return (
     <Sidebar variant="inset" className="border-r">
       <SidebarHeader className="p-6">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
-            style={{ backgroundColor: colors.primary }}
-          >
-            <Shield className="h-4 w-4" />
-          </div>
+        <div className="flex items-center gap-3">
+          <UserButton />
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-semibold" style={{ color: colors.neutral900 }}>
-              Admin Panel
+              {username}
             </span>
             <span className="truncate text-xs" style={{ color: colors.textSecondary }}>
-              Question Bank Management
+              Admin • Question Bank
             </span>
           </div>
         </div>

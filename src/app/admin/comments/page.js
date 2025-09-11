@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { UserButton, useUser } from "@clerk/nextjs";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,8 +23,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AdminCommentsPage() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const [username, setUsername] = useState("");
+  // const { isLoaded, isSignedIn, user } = useUser();
+  // const [username, setUsername] = useState("");
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,11 +34,11 @@ export default function AdminCommentsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      setUsername(user.username || "");
-    }
-  }, [isLoaded, user, isSignedIn]);
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn && user) {
+  //     setUsername(user.username || "");
+  //   }
+  // }, [isLoaded, user, isSignedIn]);
 
   useEffect(() => {
     fetchComments();
@@ -158,14 +157,14 @@ export default function AdminCommentsPage() {
         </div>
 
         {/* Profile Section */}
-        <div className="ml-auto flex items-center gap-4 px-4">
+        {/* <div className="ml-auto flex items-center gap-4 px-4">
           <div className="flex items-center gap-3">
             <UserButton />
             <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
               {username}
             </span>
           </div>
-        </div>
+        </div> */}
       </header>
 
       {/* MAIN CONTENT */}

@@ -1,6 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { UserButton, useUser } from "@clerk/nextjs";
+import React, { useState } from "react";
 import { Search } from "lucide-react";
 import AdminQuestionList from "@/components/Admin-side/AdminQuestionList";
 
@@ -9,16 +8,16 @@ import { Separator } from "@/components/ui/separator";
 import { THEME } from "@/theme";
 
 export default function AdminDashboard() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const [username, setUsername] = useState("");
+  // const { isLoaded, isSignedIn, user } = useUser();
+  // const [username, setUsername] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("questions");
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      setUsername(user.username || "");
-    }
-  }, [isLoaded, user, isSignedIn]);
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn && user) {
+  //     setUsername(user.username || "");
+  //   }
+  // }, [isLoaded, user, isSignedIn]);
 
   return (
     <SidebarInset className="text-black">
@@ -55,12 +54,12 @@ export default function AdminDashboard() {
           </div>
 
           {/* Profile */}
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             <UserButton />
             <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
               {username}
             </span>
-          </div>
+          </div> */}
         </div>
       </header>
 

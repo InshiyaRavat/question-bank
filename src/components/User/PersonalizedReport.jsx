@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 export default function PersonalizedReport() {
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState(null);
+  const [accuracyThreshold, setAccuracyThreshold] = useState(50);
 
   useEffect(() => {
     let mounted = true;
@@ -17,6 +18,10 @@ export default function PersonalizedReport() {
         if (mounted) {
           if (data.report) {
             setReport(data.report);
+            // Extract accuracy threshold from the report data if available
+            if (data.accuracyThreshold) {
+              setAccuracyThreshold(data.accuracyThreshold);
+            }
           } else {
             console.error("No report data received:", data);
           }
@@ -110,7 +115,12 @@ export default function PersonalizedReport() {
 
       <Card className="border-slate-200">
         <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Topics Accuracy</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Topics Accuracy</h3>
+            <div className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+              Topics below {accuracyThreshold}% accuracy need attention
+            </div>
+          </div>
           {report.topics && report.topics.length > 0 ? (
             <div className="space-y-3">
               {report.topics.map((t) => (

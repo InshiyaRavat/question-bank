@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +33,7 @@ import { THEME } from "@/theme";
 
 export default function FlaggedQuestionsPage() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const [username, setUsername] = useState("");
+  // const [username, setUsername] = useState("");
   const [flaggedQuestions, setFlaggedQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState({});
@@ -51,11 +51,11 @@ export default function FlaggedQuestionsPage() {
   const [adminNotes, setAdminNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      setUsername(user.username || "");
-    }
-  }, [isLoaded, user, isSignedIn]);
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn && user) {
+  //     setUsername(user.username || "");
+  //   }
+  // }, [isLoaded, user, isSignedIn]);
 
   const fetchFlaggedQuestions = async () => {
     try {
@@ -177,14 +177,14 @@ export default function FlaggedQuestionsPage() {
         </div>
 
         {/* Profile Section */}
-        <div className="ml-auto flex items-center gap-4 px-4">
+        {/* <div className="ml-auto flex items-center gap-4 px-4">
           <div className="flex items-center gap-3">
             <UserButton />
             <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
               {username}
             </span>
           </div>
-        </div>
+        </div> */}
       </header>
 
       {/* MAIN CONTENT */}

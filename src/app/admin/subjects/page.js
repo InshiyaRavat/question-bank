@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { UserButton, useUser } from "@clerk/nextjs";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { THEME } from "@/theme";
@@ -12,8 +11,8 @@ import CreateSubjectModal from "@/components/Admin-side/CreateSubjectModal";
 import CreateTopicModal from "@/components/Admin-side/CreateTopicModal";
 
 export default function AdminSubjects() {
-    const { isLoaded, isSignedIn, user } = useUser();
-    const [username, setUsername] = useState("");
+    // const { isLoaded, isSignedIn, user } = useUser();
+    // const [username, setUsername] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [subjects, setSubjects] = useState([]);
     const [expandedTopics, setExpandedTopics] = useState(new Set());
@@ -33,11 +32,11 @@ export default function AdminSubjects() {
     // Toast state
     const [toast, setToast] = useState(null);
 
-    useEffect(() => {
-        if (isLoaded && isSignedIn && user) {
-            setUsername(user.username || "");
-        }
-    }, [isLoaded, user, isSignedIn]);
+    // useEffect(() => {
+    //     if (isLoaded && isSignedIn && user) {
+    //         setUsername(user.username || "");
+    //     }
+    // }, [isLoaded, user, isSignedIn]);
 
     useEffect(() => {
         fetchSubjects();
@@ -303,12 +302,12 @@ export default function AdminSubjects() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-3">
+                    {/* <div className="flex items-center gap-3">
                         <UserButton />
                         <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
                             {username}
                         </span>
-                    </div>
+                    </div> */}
                 </div>
             </header>
 

@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { THEME } from "@/theme";
 import RefundLogs from "@/components/Admin-side/RefundLogs";
-import { UserButton, useUser } from "@clerk/nextjs";
 
 export default function AdminSubscriptionsPage() {
   const [stats, setStats] = useState(null);
@@ -28,14 +27,14 @@ export default function AdminSubscriptionsPage() {
   const [refundLogsLoading, setRefundLogsLoading] = useState(false);
   const [refundingPayment, setRefundingPayment] = useState(null);
   const [timeGranularity, setTimeGranularity] = useState("monthly"); // monthly | yearly
-  const { isLoaded, isSignedIn, user } = useUser();
-  const [username, setUsername] = useState("");
+  // const { isLoaded, isSignedIn, user } = useUser();
+  // const [username, setUsername] = useState("");
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      setUsername(user.username || "");
-    }
-  }, [isLoaded, user, isSignedIn]);
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn && user) {
+  //     setUsername(user.username || "");
+  //   }
+  // }, [isLoaded, user, isSignedIn]);
 
   // Fetch subscription statistics
   const fetchStats = async () => {
@@ -168,12 +167,12 @@ export default function AdminSubscriptionsPage() {
           <p className="text-muted-foreground">Monitor subscription statistics and manage payments</p>
         </div>
         <div className="flex flex-col gap-5">
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             <UserButton />
             <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
               {username}
             </span>
-          </div>
+          </div> */}
           <Button
             onClick={() => {
               fetchStats();

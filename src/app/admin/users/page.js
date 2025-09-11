@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { UserButton, useUser } from "@clerk/nextjs";
 import UsersTable from "@/components/Admin-side/UsersTable";
 
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -8,14 +7,14 @@ import { Separator } from "@/components/ui/separator";
 import { THEME } from "@/theme";
 
 export default function AdminDashboard() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const [username, setUsername] = useState("");
+  // const { isLoaded, isSignedIn, user } = useUser();
+  // const [username, setUsername] = useState("");
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      setUsername(user.username || "");
-    }
-  }, [isLoaded, user, isSignedIn]);
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn && user) {
+  //     setUsername(user.username || "");
+  //   }
+  // }, [isLoaded, user, isSignedIn]);
 
   return (
     <SidebarInset className='text-black'>
@@ -30,14 +29,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* Profile Section */}
-        <div className="ml-auto flex items-center gap-4 px-4">
+        {/* <div className="ml-auto flex items-center gap-4 px-4">
           <div className="flex items-center gap-3">
             <UserButton />
             <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
               {username}
             </span>
           </div>
-        </div>
+        </div> */}
       </header>
 
       {/* MAIN CONTENT */}

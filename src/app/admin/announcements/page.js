@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { UserButton, useUser } from "@clerk/nextjs";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -45,8 +44,8 @@ const priorityColors = {
 };
 
 export default function AdminAnnouncementsPage() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const [username, setUsername] = useState("");
+  // const { isLoaded, isSignedIn, user } = useUser();
+  // const [username, setUsername] = useState("");
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -59,11 +58,11 @@ export default function AdminAnnouncementsPage() {
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      setUsername(user.username || "");
-    }
-  }, [isLoaded, user, isSignedIn]);
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn && user) {
+  //     setUsername(user.username || "");
+  //   }
+  // }, [isLoaded, user, isSignedIn]);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -220,12 +219,12 @@ export default function AdminAnnouncementsPage() {
             <Plus className="h-4 w-4 mr-2" />
             Create Announcement
           </Button>
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             <UserButton />
             <span className="text-sm font-medium" style={{ color: THEME.neutral900 }}>
               {username}
             </span>
-          </div>
+          </div> */}
         </div>
       </header>
 
@@ -319,8 +318,8 @@ export default function AdminAnnouncementsPage() {
                                   {announcement.targetRole === "all"
                                     ? "All Users"
                                     : announcement.targetRole === "student"
-                                    ? "Students"
-                                    : "Admins"}
+                                      ? "Students"
+                                      : "Admins"}
                                 </Badge>
                               </div>
                             </div>
