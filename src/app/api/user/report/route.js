@@ -8,6 +8,12 @@ export async function GET(req) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
 
+    // Get query parameters for time filtering
+    const { searchParams } = new URL(req.url);
+    const timeFilter = searchParams.get('timeFilter') || 'all'; // all, week, month, year, specific
+    const specificMonth = searchParams.get('month'); // YYYY-MM format
+    const specificYear = searchParams.get('year'); // YYYY format
+
     // Get accuracy threshold from settings
     let accuracyThreshold = 50; // Default value
     try {
@@ -21,8 +27,50 @@ export async function GET(req) {
       console.log("Could not fetch accuracy threshold, using default:", error.message);
     }
 
+    // Build time filter for sessions
+    let timeWhereClause = { userId, status: "completed" };
+    
+    if (timeFilter !== 'all') {
+      const now = new Date();
+      let startDate;
+      
+      switch (timeFilter) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case 'year':
+          startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          break;
+        case 'specific':
+          if (specificMonth) {
+            startDate = new Date(specificMonth + '-01');
+            const endDate = new Date(startDate);
+            endDate.setMonth(endDate.getMonth() + 1);
+            timeWhereClause.startedAt = {
+              gte: startDate,
+              lt: endDate
+            };
+          } else if (specificYear) {
+            startDate = new Date(specificYear + '-01-01');
+            const endDate = new Date(specificYear + '-12-31');
+            timeWhereClause.startedAt = {
+              gte: startDate,
+              lte: endDate
+            };
+          }
+          break;
+      }
+      
+      if (timeFilter !== 'specific' && startDate) {
+        timeWhereClause.startedAt = { gte: startDate };
+      }
+    }
+
     const sessions = await prisma.testSession.findMany({
-      where: { userId, status: "completed" },
+      where: timeWhereClause,
       orderBy: { startedAt: "desc" },
       take: 100,
     });
@@ -108,10 +156,78 @@ export async function GET(req) {
       })
       .sort((a, b) => a.accuracy - b.accuracy);
 
+    // Get all topics to find topics left to do
+    const allTopics = await prisma.topic.findMany({
+      select: { id: true, name: true }
+    });
+
+    // Find topics that haven't been covered
+    const coveredTopicIds = new Set(Object.keys(topicIdToStats).map(id => parseInt(id)));
+    const topicsLeftToDo = allTopics
+      .filter(topic => !coveredTopicIds.has(topic.id))
+      .map(topic => ({
+        topicId: topic.id,
+        topicName: topic.name,
+        status: 'not_attempted'
+      }));
+
+    // Calculate time period statistics
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+    const weeklyStats = sessions.filter(s => new Date(s.startedAt) >= oneWeekAgo);
+    const monthlyStats = sessions.filter(s => new Date(s.startedAt) >= oneMonthAgo);
+    const quarterlyStats = sessions.filter(s => new Date(s.startedAt) >= threeMonthsAgo);
+
+    // Calculate total questions attempted and correct
+    const totalQuestionsAttempted = sessions.reduce((sum, s) => sum + (s.totalQuestions || 0), 0);
+    const totalQuestionsCorrect = sessions.reduce((sum, s) => sum + (s.correctCount || 0), 0);
+    const totalQuestionsIncorrect = sessions.reduce((sum, s) => sum + (s.incorrectCount || 0), 0);
+    const overallAccuracy = totalQuestionsAttempted > 0 ? Math.round((totalQuestionsCorrect / totalQuestionsAttempted) * 100) : 0;
+
     return new Response(
       JSON.stringify({ 
-        report: { totalAttempts, history, topics: topicsReport },
-        accuracyThreshold 
+        report: { 
+          totalAttempts, 
+          history, 
+          topics: topicsReport,
+          topicsLeftToDo,
+          timePeriodStats: {
+            weekly: {
+              tests: weeklyStats.length,
+              questions: weeklyStats.reduce((sum, s) => sum + (s.totalQuestions || 0), 0),
+              correct: weeklyStats.reduce((sum, s) => sum + (s.correctCount || 0), 0),
+              accuracy: weeklyStats.length > 0 ? Math.round((weeklyStats.reduce((sum, s) => sum + (s.correctCount || 0), 0) / weeklyStats.reduce((sum, s) => sum + (s.totalQuestions || 0), 1)) * 100) : 0
+            },
+            monthly: {
+              tests: monthlyStats.length,
+              questions: monthlyStats.reduce((sum, s) => sum + (s.totalQuestions || 0), 0),
+              correct: monthlyStats.reduce((sum, s) => sum + (s.correctCount || 0), 0),
+              accuracy: monthlyStats.length > 0 ? Math.round((monthlyStats.reduce((sum, s) => sum + (s.correctCount || 0), 0) / monthlyStats.reduce((sum, s) => sum + (s.totalQuestions || 0), 1)) * 100) : 0
+            },
+            quarterly: {
+              tests: quarterlyStats.length,
+              questions: quarterlyStats.reduce((sum, s) => sum + (s.totalQuestions || 0), 0),
+              correct: quarterlyStats.reduce((sum, s) => sum + (s.correctCount || 0), 0),
+              accuracy: quarterlyStats.length > 0 ? Math.round((quarterlyStats.reduce((sum, s) => sum + (s.correctCount || 0), 0) / quarterlyStats.reduce((sum, s) => sum + (s.totalQuestions || 0), 1)) * 100) : 0
+            }
+          },
+          overallStats: {
+            totalQuestionsAttempted,
+            totalQuestionsCorrect,
+            totalQuestionsIncorrect,
+            overallAccuracy,
+            topicsCovered: topicsReport.length,
+            topicsLeft: topicsLeftToDo.length,
+            totalTopics: allTopics.length
+          }
+        },
+        accuracyThreshold,
+        timeFilter,
+        specificMonth,
+        specificYear
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

@@ -69,6 +69,12 @@ const adminNavItems = [
     description: "Individual user performance",
   },
   {
+    title: "User Reports",
+    url: "/admin/user-reports",
+    icon: Users,
+    description: "Comprehensive user reports and analytics",
+  },
+  {
     title: "Question Analytics",
     url: "/admin/question-analytics",
     icon: BarChart3,
