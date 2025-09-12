@@ -34,6 +34,8 @@ export default function UserReportsPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetail, setUserDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [userPdfLoading, setUserPdfLoading] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     plan: "all",
@@ -148,6 +150,67 @@ export default function UserReportsPage() {
     a.href = url;
     a.download = `user-reports-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+  };
+
+  const exportToPDF = async () => {
+    setPdfLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.search) params.append("search", filters.search);
+      if (filters.plan !== "all") params.append("plan", filters.plan);
+      if (filters.accuracyMin !== "0") params.append("accuracyMin", filters.accuracyMin);
+      if (filters.accuracyMax !== "100") params.append("accuracyMax", filters.accuracyMax);
+      params.append("sortBy", filters.sortBy);
+
+      const response = await fetch(`/api/admin/user-reports/pdf?${params.toString()}`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `user-reports-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success("PDF exported successfully");
+      } else {
+        toast.error("Failed to generate PDF");
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error("Error exporting PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const exportUserToPDF = async (userId) => {
+    setUserPdfLoading(true);
+    try {
+      const response = await fetch(`/api/admin/user-reports/${userId}/pdf`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `user-report-${userId}-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success("User PDF exported successfully");
+      } else {
+        toast.error("Failed to generate user PDF");
+      }
+    } catch (error) {
+      console.error('Error exporting user PDF:', error);
+      toast.error("Error exporting user PDF");
+    } finally {
+      setUserPdfLoading(false);
+    }
   };
 
   const getAccuracyColor = (accuracy) => {
@@ -355,10 +418,20 @@ export default function UserReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>User Performance Overview</CardTitle>
-              <Button onClick={exportData} variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={exportToPDF} 
+                  disabled={pdfLoading || !data?.users?.length}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {pdfLoading ? 'Generating...' : 'Export PDF'}
+                </Button>
+                <Button onClick={exportData} variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -440,10 +513,21 @@ export default function UserReportsPage() {
                             </DialogTrigger>
                             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                  <User className="h-5 w-5" />
-                                  {selectedUser?.name} - Detailed Report
-                                </DialogTitle>
+                                <div className="flex items-center justify-between">
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <User className="h-5 w-5" />
+                                    {selectedUser?.name} - Detailed Report
+                                  </DialogTitle>
+                                  <Button 
+                                    onClick={() => exportUserToPDF(selectedUser?.id)} 
+                                    disabled={userPdfLoading || !selectedUser}
+                                    className="flex items-center gap-2"
+                                    size="sm"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    {userPdfLoading ? 'Generating...' : 'Export PDF'}
+                                  </Button>
+                                </div>
                               </DialogHeader>
 
                               {detailLoading ? (

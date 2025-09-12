@@ -13,7 +13,8 @@ import {
   Clock, 
   TrendingUp,
   BookOpen,
-  Calendar
+  Calendar,
+  Download
 } from "lucide-react";
 
 export default function PersonalizedReport() {
@@ -23,6 +24,7 @@ export default function PersonalizedReport() {
   const [timeFilter, setTimeFilter] = useState('all');
   const [specificMonth, setSpecificMonth] = useState('');
   const [specificYear, setSpecificYear] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const fetchReport = async (timeFilter = 'all', month = '', year = '') => {
     try {
@@ -59,6 +61,36 @@ export default function PersonalizedReport() {
     return () => { mounted = false; };
   }, [timeFilter, specificMonth, specificYear]);
 
+  const exportToPDF = async () => {
+    setPdfLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (timeFilter !== 'all') params.append('timeFilter', timeFilter);
+      if (specificMonth) params.append('month', specificMonth);
+      if (specificYear) params.append('year', specificYear);
+      
+      const response = await fetch(`/api/user/report/pdf?${params.toString()}`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `personal-report-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        console.error('Failed to generate PDF');
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card className="border-slate-200">
@@ -83,10 +115,20 @@ export default function PersonalizedReport() {
       {/* Time Filter Controls */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Report Filters
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Report Filters
+            </CardTitle>
+            <Button 
+              onClick={exportToPDF} 
+              disabled={pdfLoading || !report}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {pdfLoading ? 'Generating...' : 'Export PDF'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4 items-end">
