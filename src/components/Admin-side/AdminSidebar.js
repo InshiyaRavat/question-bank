@@ -75,6 +75,12 @@ const adminNavItems = [
     description: "Comprehensive user reports and analytics",
   },
   {
+    title: "Retake Limits",
+    url: "/admin/retake-limits",
+    icon: Settings,
+    description: "Manage user retake limits",
+  },
+  {
     title: "Question Analytics",
     url: "/admin/question-analytics",
     icon: BarChart3,

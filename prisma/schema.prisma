@@ -291,3 +291,14 @@ model Settings {
 
   @@index([key])
 }
+
+model UserRetakeLimit {
+  id          Int      @id @default(autoincrement())
+  userId      String   @map("user_id")
+  maxRetakes  Int      @default(-1) @map("max_retakes") // -1 means unlimited
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId])
+  @@index([userId])
+}

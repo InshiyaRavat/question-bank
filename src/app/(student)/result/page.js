@@ -15,6 +15,8 @@ export default function Result() {
   const [sessionId, setSessionId] = useState("");
   const [testSession, setTestSession] = useState(null);
   const [currentPlan, setCurrentPlan] = useState(null);
+  const [retakeLimit, setRetakeLimit] = useState({ maxRetakes: -1, isUnlimited: true });
+  const [retakeLoading, setRetakeLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -54,7 +56,21 @@ export default function Result() {
       }
     };
 
+    // Fetch retake limit
+    const fetchRetakeLimit = async () => {
+      try {
+        const response = await fetch('/api/test-session/retake');
+        if (response.ok) {
+          const data = await response.json();
+          setRetakeLimit(data);
+        }
+      } catch (error) {
+        console.error("Error fetching retake limit:", error);
+      }
+    };
+
     fetchSessionDetails();
+    fetchRetakeLimit();
     fetchCurrentPlan();
   }, []);
 
@@ -63,7 +79,7 @@ export default function Result() {
       const response = await fetch("/api/study-plan");
       const data = await response.json();
       setCurrentPlan(data.plan);
-      
+
       // Update study plan progress for practice sessions
       if (type === "practice" && data.plan) {
         updateStudyPlanProgress(data.plan.id);
@@ -112,6 +128,39 @@ export default function Result() {
     } else {
       // Fallback to old system
       router.push(`/questions?type=${type}&retest=true`);
+    }
+  };
+
+  const handleRetake = async () => {
+    if (!sessionId) {
+      alert("Session ID not found");
+      return;
+    }
+
+    setRetakeLoading(true);
+    try {
+      const response = await fetch('/api/test-session/retake', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Redirect to test with new session
+        const testUrl = `/question?sessionId=${data.session.sessionId}&type=${type}`;
+        window.location.href = testUrl;
+      } else {
+        alert(data.error || 'Failed to create retake test');
+      }
+    } catch (error) {
+      console.error('Error creating retake test:', error);
+      alert('Error creating retake test');
+    } finally {
+      setRetakeLoading(false);
     }
   };
 
@@ -231,12 +280,40 @@ export default function Result() {
         </button>
 
         {type != "practice" && (
-          <button
-            className={`mt-4 px-6 py-3 bg-[${THEME.secondary_5}] text-white rounded-lg font-semibold hover:bg-[${THEME.secondary_6}] transition shadow-md`}
-            onClick={handleRetest}
-          >
-            Retest
-          </button>
+          <div className="mt-4 space-y-2">
+            <button
+              className={`px-6 py-3 bg-[${THEME.secondary_5}] text-green-600 border-green-600 rounded-lg font-semibold hover:bg-[${THEME.secondary_6}] transition shadow-md disabled:bg-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed`}
+              onClick={handleRetest}
+              disabled={retakeLoading || (!retakeLimit.isUnlimited && testSession && testSession.retestCount >= retakeLimit.maxRetakes)}
+            >
+              Retest (Same Questions)
+            </button>
+
+            <div className="text-center">
+              <button
+                className={`px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed`}
+                onClick={handleRetake}
+                disabled={retakeLoading || (!retakeLimit.isUnlimited && testSession && testSession.retestCount >= retakeLimit.maxRetakes)}
+              >
+                {retakeLoading ? 'Creating Retake...' : 'Retake Test (New Questions)'}
+              </button>
+
+              {!retakeLimit.isUnlimited && testSession && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Retakes: {testSession.retestCount || 0} / {retakeLimit.maxRetakes}
+                  {testSession.retestCount >= retakeLimit.maxRetakes && (
+                    <span className="text-red-600 font-semibold"> (Limit Reached)</span>
+                  )}
+                </p>
+              )}
+
+              {retakeLimit.isUnlimited && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Unlimited retakes available
+                </p>
+              )}
+            </div>
+          </div>
         )}
 
         <div className="mt-8 text-left">
