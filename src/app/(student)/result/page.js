@@ -282,7 +282,7 @@ export default function Result() {
         {type != "practice" && (
           <div className="mt-4 space-y-2">
             <button
-              className={`px-6 py-3 bg-[${THEME.secondary_5}] text-green-600 border-green-600 rounded-lg font-semibold hover:bg-[${THEME.secondary_6}] transition shadow-md disabled:bg-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed`}
+              className={`px-6 py-3 bg-[${THEME.secondary_5}] text-green-600 hover:text-white hover:bg-green-700 transition-all ease-in-out cursor-pointer border-green-600 rounded-lg font-semibold hover:bg-[${THEME.secondary_6}] transition shadow-md disabled:bg-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed`}
               onClick={handleRetest}
               disabled={retakeLoading || (!retakeLimit.isUnlimited && testSession && testSession.retestCount >= retakeLimit.maxRetakes)}
             >
@@ -291,7 +291,7 @@ export default function Result() {
 
             <div className="text-center">
               <button
-                className={`px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed`}
+                className={`px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed`}
                 onClick={handleRetake}
                 disabled={retakeLoading || (!retakeLimit.isUnlimited && testSession && testSession.retestCount >= retakeLimit.maxRetakes)}
               >
