@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, BookOpen, CreditCard, History, BarChart3, Target, FileText } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import DynamicLogo from "@/components/common/DynamicLogo";
 
-const navItems = [
+const baseNavItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Study Plan", url: "/study-plan", icon: Target },
   { title: "Question Topics", url: "/question-topic", icon: BookOpen },
@@ -31,6 +31,38 @@ const navItems = [
 
 export default function UserSidebar() {
   const pathname = usePathname();
+  const { user, isLoaded } = useUser();
+  const [canDownloadStudyMaterial, setCanDownloadStudyMaterial] = useState(false);
+  const [permissionLoaded, setPermissionLoaded] = useState(false);
+
+  // Check study material permission
+  useEffect(() => {
+    const checkPermission = async () => {
+      if (!isLoaded || !user) return;
+      
+      try {
+        const response = await fetch('/api/user/study-material-permission');
+        if (response.ok) {
+          const data = await response.json();
+          setCanDownloadStudyMaterial(data.canDownload || false);
+        }
+      } catch (error) {
+        console.error('Error checking study material permission:', error);
+      } finally {
+        setPermissionLoaded(true);
+      }
+    };
+
+    checkPermission();
+  }, [isLoaded, user]);
+
+  // Filter nav items based on permissions
+  const navItems = baseNavItems.filter(item => {
+    if (item.title === "Study Material") {
+      return canDownloadStudyMaterial;
+    }
+    return true;
+  });
 
   return (
     <SidebarProvider>

@@ -302,3 +302,14 @@ model UserRetakeLimit {
   @@unique([userId])
   @@index([userId])
 }
+
+model UserStudyMaterialPermission {
+  id          Int      @id @default(autoincrement())
+  userId      String   @map("user_id")
+  canDownload Boolean  @default(false) @map("can_download")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId])
+  @@index([userId])
+}

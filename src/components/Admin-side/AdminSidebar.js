@@ -13,6 +13,7 @@ import {
   MessageSquare,
   CreditCard,
   Shield,
+  Download,
   Megaphone,
   Activity,
   Trash2,
@@ -79,6 +80,12 @@ const adminNavItems = [
     url: "/admin/retake-limits",
     icon: Settings,
     description: "Manage user retake limits",
+  },
+  {
+    title: "Study Material Permissions",
+    url: "/admin/study-material-permissions",
+    icon: Download,
+    description: "Control study material downloads",
   },
   {
     title: "Question Analytics",

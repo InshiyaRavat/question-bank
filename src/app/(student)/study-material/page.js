@@ -26,6 +26,8 @@ export default function StudyMaterialPage() {
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [hasPermission, setHasPermission] = useState(false);
+  const [permissionChecked, setPermissionChecked] = useState(false);
   const [filters, setFilters] = useState({
     format: 'pdf',
     includeAllTopics: true,
@@ -35,9 +37,29 @@ export default function StudyMaterialPage() {
 
   useEffect(() => {
     if (isLoaded && user) {
-      fetchTopics();
+      checkPermission();
     }
   }, [isLoaded, user]);
+
+  const checkPermission = async () => {
+    try {
+      const response = await fetch('/api/user/study-material-permission');
+      if (response.ok) {
+        const data = await response.json();
+        setHasPermission(data.canDownload || false);
+        if (data.canDownload) {
+          fetchTopics();
+        }
+      } else {
+        setHasPermission(false);
+      }
+    } catch (error) {
+      console.error('Error checking permission:', error);
+      setHasPermission(false);
+    } finally {
+      setPermissionChecked(true);
+    }
+  };
 
   const fetchTopics = async () => {
     try {
@@ -143,8 +165,15 @@ export default function StudyMaterialPage() {
       .reduce((sum, topic) => sum + topic.questionCount, 0);
   };
 
-  if (!isLoaded) {
-    return <div>Loading...</div>;
+  if (!isLoaded || !permissionChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -156,6 +185,32 @@ export default function StudyMaterialPage() {
             <p>Please log in to access study materials.</p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <UserSidebar />
+        <div className="ml-64 p-6">
+          <div className="max-w-2xl mx-auto">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+                  <p className="text-gray-600 mb-4">
+                    You don&apos;t have permission to download study materials.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Please contact your administrator to request access to study material downloads.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }

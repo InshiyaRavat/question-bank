@@ -35,6 +35,18 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Check if user has permission to download study materials
+    const permission = await prisma.userStudyMaterialPermission.findUnique({
+      where: { userId },
+      select: { canDownload: true }
+    });
+
+    if (!permission?.canDownload) {
+      return NextResponse.json({ 
+        error: "Access denied. You don't have permission to download study materials. Please contact your administrator." 
+      }, { status: 403 });
+    }
+
     const {
       format,
       topicIds,
