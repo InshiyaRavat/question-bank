@@ -53,6 +53,7 @@ export async function POST(req) {
       user.username ||
       user.emailAddresses?.[0]?.emailAddress?.split('@')[0] ||
       "User";
+    const userEmail = user.emailAddresses?.[0]?.emailAddress || "";
 
     // Get topics
     let topics;
@@ -125,7 +126,7 @@ export async function POST(req) {
     }
 
     if (format === 'pdf') {
-      return await generatePDF(filteredTopics, userName, includeExplanations);
+      return await generatePDF(filteredTopics, { name: userName, email: userEmail }, includeExplanations);
     } else if (format === 'word') {
       return await generateWord(filteredTopics, userName, includeExplanations);
     } else {
@@ -138,147 +139,378 @@ export async function POST(req) {
   }
 }
 
-async function generatePDF(topics, userName, includeExplanations) {
+async function generatePDF(topics, userInfo, includeExplanations) {
   await loadPDFLibs();
-  
+
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  
-  // Professional margins: 1.5cm = 42.5 points (1cm = 28.35 points)
-  const margin = 42.5;
+
+  // Optimized margins and spacing for compact layout
+  const margin = 20;
   const contentWidth = pageWidth - (margin * 2);
-  const headerSpace = 50; // Space for header
-  const footerSpace = 30; // Space for footer
-  const contentHeight = pageHeight - headerSpace - footerSpace;
-  
-  let currentY = margin + headerSpace;
+  const headerHeight = 15;
+  const footerHeight = 15;
+  const contentHeight = pageHeight - headerHeight - footerHeight - (margin * 2);
 
-  // Helper function to add text with word wrapping
-  const addText = (text, x, y, maxWidth, fontSize = 12, isBold = false) => {
+  let currentY = margin + headerHeight;
+
+  // Professional color scheme
+  const colors = {
+    primary: { r: 37, g: 99, b: 235 },
+    secondary: { r: 75, g: 85, b: 99 },
+    success: { r: 16, g: 185, b: 129 },
+    background: { r: 249, g: 250, b: 251 },
+    border: { r: 229, g: 231, b: 235 },
+    text: { r: 17, g: 24, b: 39 },
+    lightText: { r: 107, g: 114, b: 128 }
+  };
+
+  // Helper functions
+  const addText = (text, x, y, options = {}) => {
+    const {
+      maxWidth = contentWidth,
+      fontSize = 10,
+      fontStyle = 'normal',
+      color = colors.text,
+      align = 'left',
+      lineHeight = 1.2
+    } = options;
+
     doc.setFontSize(fontSize);
-    doc.setFont(undefined, isBold ? 'bold' : 'normal');
+    doc.setFont('helvetica', fontStyle);
+    doc.setTextColor(color.r, color.g, color.b);
+
     const lines = doc.splitTextToSize(text, maxWidth);
-    doc.text(lines, x, y);
-    return y + (lines.length * fontSize * 0.4) + 5;
-  };
 
-  // Helper function to check if we need a new page
-  const checkPage = (requiredSpace = 30) => {
-    if (currentY + requiredSpace > pageHeight - footerSpace) {
-      doc.addPage();
-      currentY = margin + headerSpace;
+    if (align === 'center') {
+      doc.text(lines, pageWidth / 2, y, { align: 'center' });
+    } else if (align === 'right') {
+      doc.text(lines, x + maxWidth, y, { align: 'right' });
+    } else {
+      doc.text(lines, x, y);
     }
+
+    return y + (lines.length * fontSize * lineHeight) + 2;
   };
 
-  // Cover Page
-  doc.setFontSize(24);
-  doc.setFont(undefined, 'bold');
-  doc.text('Study Material', pageWidth / 2, 60, { align: 'center' });
-  
-  doc.setFontSize(16);
-  doc.setFont(undefined, 'normal');
-  doc.text('Question Bank System', pageWidth / 2, 80, { align: 'center' });
-  
-  doc.setFontSize(14);
-  doc.text(`Student: ${userName}`, pageWidth / 2, 100, { align: 'center' });
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 115, { align: 'center' });
-  
+  const checkNewPage = (requiredSpace = 30) => {
+    if (currentY + requiredSpace > pageHeight - footerHeight - margin) {
+      addNewPage();
+      return true;
+    }
+    return false;
+  };
+
+  const addNewPage = () => {
+    doc.addPage();
+    currentY = margin + headerHeight + 5;
+  };
+
+  const drawCard = (x, y, width, height, fillColor = colors.background, borderColor = colors.border) => {
+    doc.setFillColor(fillColor.r, fillColor.g, fillColor.b);
+    doc.setDrawColor(borderColor.r, borderColor.g, borderColor.b);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, width, height, 2, 2, 'FD');
+  };
+
+  // COVER PAGE - More compact
+  doc.setFillColor(colors.primary.r, colors.primary.g, colors.primary.b);
+  doc.rect(0, 0, pageWidth, 45, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(26);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Practice Questions Report', pageWidth / 2, 28, { align: 'center' });
+
   doc.setFontSize(12);
-  doc.text(`Total Topics: ${topics.length}`, pageWidth / 2, 135, { align: 'center' });
-  doc.text(`Total Questions: ${topics.reduce((sum, topic) => sum + topic.questions.length, 0)}`, pageWidth / 2, 150, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.text('Knowledge Assessment & Progress Review', pageWidth / 2, 40, { align: 'center' });
 
-  // Start from page 2 with professional format
-  doc.addPage();
-  currentY = margin + headerSpace;
+  // Compact user info card
+  const cardY = 60;
+  const cardHeight = 35;
+  drawCard(margin, cardY, contentWidth, cardHeight);
 
-  // Generate content for each topic
+  doc.setTextColor(colors.text.r, colors.text.g, colors.text.b);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(userInfo.name || 'Student', pageWidth / 2, cardY + 15, { align: 'center' });
+
+  if (userInfo.email) {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors.secondary.r, colors.secondary.g, colors.secondary.b);
+    doc.text(userInfo.email, pageWidth / 2, cardY + 28, { align: 'center' });
+  }
+
+  // Compact stats
+  const totalQuestions = topics.reduce((sum, topic) => sum + topic.questions.length, 0);
+  const statsY = cardY + cardHeight + 20;
+
+  const statCardWidth = (contentWidth - 20) / 3;
+  const statCards = [
+    { label: 'Topics', value: topics.length.toString() },
+    { label: 'Questions', value: totalQuestions.toString() },
+    { label: 'Generated', value: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }
+  ];
+
+  statCards.forEach((stat, index) => {
+    const cardX = margin + (index * (statCardWidth + 10));
+    drawCard(cardX, statsY, statCardWidth, 25, colors.background);
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colors.primary.r, colors.primary.g, colors.primary.b);
+    doc.text(stat.value, cardX + statCardWidth / 2, statsY + 12, { align: 'center' });
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors.secondary.r, colors.secondary.g, colors.secondary.b);
+    doc.text(stat.label, cardX + statCardWidth / 2, statsY + 20, { align: 'center' });
+  });
+
+  // TABLE OF CONTENTS - Much more compact
+  addNewPage();
+  currentY = margin + headerHeight + 5;
+
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(colors.text.r, colors.text.g, colors.text.b);
+  doc.text('Table of Contents', margin, currentY);
+
+  currentY += 15;
+  doc.setDrawColor(colors.primary.r, colors.primary.g, colors.primary.b);
+  doc.setLineWidth(1);
+  doc.line(margin, currentY - 3, margin + 60, currentY - 3);
+  currentY += 8;
+
+  const tocEntries = [];
+
+  topics.forEach((topic, index) => {
+    checkNewPage(12);
+
+    const topicNumber = `${(index + 1).toString().padStart(2, '0')}.`;
+    const topicTitle = topic.name;
+    const questionCount = `${topic.questions.length}Q`;
+
+    tocEntries.push({
+      number: topicNumber,
+      title: topicTitle,
+      count: questionCount,
+      y: currentY,
+      page: null
+    });
+
+    // More compact TOC layout
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colors.primary.r, colors.primary.g, colors.primary.b);
+    doc.text(topicNumber, margin, currentY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors.text.r, colors.text.g, colors.text.b);
+
+    // Truncate long titles if needed
+    const maxTitleWidth = contentWidth - 50;
+    const titleLines = doc.splitTextToSize(topicTitle, maxTitleWidth);
+    const displayTitle = titleLines[0] + (titleLines.length > 1 ? '...' : '');
+
+    doc.text(displayTitle, margin + 18, currentY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors.secondary.r, colors.secondary.g, colors.secondary.b);
+    doc.text(`(${questionCount})`, pageWidth - margin - 25, currentY);
+
+    currentY += 11;
+  });
+
+  // CONTENT PAGES - Much more compact
   topics.forEach((topic, topicIndex) => {
-    // Each topic starts on a new page (except the first one)
-    if (topicIndex > 0) {
-      doc.addPage();
-      currentY = margin + headerSpace;
+    // Don't always start new page - only if needed
+    if (topicIndex === 0) {
+      addNewPage();
+    } else {
+      checkNewPage(60); // Only new page if not enough space
     }
 
-    // Topic name with professional header
-    doc.setFillColor(52, 152, 219);
-    doc.rect(margin, currentY - 10, contentWidth, 25, 'F');
-    
+    const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+    if (tocEntries[topicIndex]) {
+      tocEntries[topicIndex].page = currentPage;
+    }
+
+    // Compact topic header
+    const headerHeight = 25;
+    doc.setFillColor(colors.primary.r, colors.primary.g, colors.primary.b);
+    doc.rect(margin, currentY - 3, contentWidth, headerHeight, 'F');
+
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
-    doc.text(`${topicIndex + 1}. ${topic.name}`, margin + 10, currentY + 5);
-    
-    currentY += 35;
-    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    const topicNumber = `${(topicIndex + 1).toString().padStart(2, '0')}.`;
+    doc.text(topicNumber, margin + 8, currentY + 10);
+    doc.text(topic.name, margin + 25, currentY + 10);
 
-    // Questions for this topic
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const questionCountText = `${topic.questions.length}Q`;
+    doc.text(questionCountText, pageWidth - margin - 8, currentY + 10, { align: 'right' });
+
+    currentY += headerHeight + 8;
+
+    // Compact questions layout
     topic.questions.forEach((question, questionIndex) => {
-      checkPage(50);
+      checkNewPage(50);
 
-      // Question text
-      currentY = addText(`Q${questionIndex + 1}. ${question.questionText}`, margin, currentY, contentWidth, 12, false);
-      currentY += 5;
+      // Question header - more compact
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(colors.text.r, colors.text.g, colors.text.b);
+      doc.text(`Q${questionIndex + 1}:`, margin, currentY);
 
-      // Options
+      currentY += 12;
+
+      // Question text - compact
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const questionLines = doc.splitTextToSize(question.questionText, contentWidth - 5);
+      doc.text(questionLines, margin, currentY);
+      currentY += questionLines.length * 10 * 0.6 + 8;
+
+      // Options - much more compact
       question.options.forEach((option, optionIndex) => {
+        checkNewPage(15);
+
         const optionLabel = String.fromCharCode(65 + optionIndex);
         const isCorrect = optionIndex === question.correctOptionIdx;
-        const optionText = `${optionLabel}) ${option}`;
-        
+
         if (isCorrect) {
-          doc.setTextColor(0, 128, 0); // Green for correct answer
-          doc.setFont(undefined, 'bold');
-        } else {
-          doc.setTextColor(0, 0, 0); // Black for other options
-          doc.setFont(undefined, 'normal');
+          doc.setFillColor(240, 253, 244);
+          doc.rect(margin, currentY - 2, contentWidth, 10, 'F');
         }
-        
-        currentY = addText(optionText, margin + 10, currentY, contentWidth - 10, 11, isCorrect);
-        doc.setTextColor(0, 0, 0); // Reset color
+
+        doc.setFontSize(9);
+        if (isCorrect) {
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(colors.success.r, colors.success.g, colors.success.b);
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(colors.text.r, colors.text.g, colors.text.b);
+        }
+
+        doc.text(`${optionLabel}.`, margin + 2, currentY + 5);
+
+        // Wrap long options
+        const optionLines = doc.splitTextToSize(option, contentWidth - 15);
+        doc.text(optionLines, margin + 10, currentY + 5);
+
+        currentY += Math.max(10, optionLines.length * 9);
       });
 
       currentY += 5;
 
-      // Correct answer
-      const correctOption = String.fromCharCode(65 + question.correctOptionIdx);
-      currentY = addText(`Correct Answer: ${correctOption}) ${question.options[question.correctOptionIdx]}`, margin, currentY, contentWidth, 11, true);
-      currentY += 5;
+      // Compact correct answer
+      const correctLabel = String.fromCharCode(65 + question.correctOptionIdx);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(colors.success.r, colors.success.g, colors.success.b);
+      doc.text(`✓ Answer: ${correctLabel}`, margin, currentY);
+      currentY += 12;
 
-      // Explanation
+      // Compact explanation
       if (includeExplanations && question.explanation) {
-        currentY = addText(`Explanation: ${question.explanation}`, margin, currentY, contentWidth, 10, false);
-        currentY += 5;
+        checkNewPage(20);
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(colors.primary.r, colors.primary.g, colors.primary.b);
+        doc.text('Explanation:', margin, currentY);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(colors.text.r, colors.text.g, colors.text.b);
+        const explanationLines = doc.splitTextToSize(question.explanation, contentWidth - 5);
+        doc.text(explanationLines, margin, currentY + 8);
+        currentY += explanationLines.length * 8 * 0.6 + 10;
       }
 
-      currentY += 10; // Space between questions
+      currentY += 8; // Reduced space between questions
     });
+
+    currentY += 10; // Small space between topics
   });
 
-  // Professional footer on all pages
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
+  // Update TOC with page numbers - fixed overlapping
+  doc.setPage(2);
+
+  tocEntries.forEach(entry => {
+    if (entry && entry.page) {
+      const pageNumText = entry.page.toString();
+
+      // Simple dot leader without overlapping
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(colors.secondary.r, colors.secondary.g, colors.secondary.b);
+
+      // Calculate available space for dots
+      const numberWidth = doc.getTextWidth(entry.number);
+      const titleWidth = doc.getTextWidth(entry.title.length > 35 ? entry.title.substring(0, 35) + '...' : entry.title);
+      const countWidth = doc.getTextWidth(`(${entry.count})`);
+      const pageWidth = doc.getTextWidth(pageNumText);
+
+      const dotsStartX = margin + numberWidth + 18 + titleWidth + 5;
+      const dotsEndX = pageWidth - margin - countWidth - pageWidth - 10;
+
+      // Add dots if there's space
+      if (dotsEndX > dotsStartX) {
+        const dotCount = Math.floor((dotsEndX - dotsStartX) / 2);
+        const dots = '.'.repeat(Math.max(0, Math.min(dotCount, 20)));
+        doc.text(dots, dotsStartX, entry.y);
+      }
+
+      // Page number
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(colors.primary.r, colors.primary.g, colors.primary.b);
+      doc.text(pageNumText, pageWidth - margin - 8, entry.y, { align: 'right' });
+    }
+  });
+
+  // Compact headers and footers
+  const totalPages = doc.internal.getNumberOfPages();
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
+  for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    
-    // Footer line
-    doc.setDrawColor(200, 200, 200);
-    doc.line(margin, pageHeight - footerSpace + 5, pageWidth - margin, pageHeight - footerSpace + 5);
-    
-    // Footer text
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Page ${i} of ${pageCount}`, margin, pageHeight - 15);
-    doc.text('Question Bank System', pageWidth - margin - 60, pageHeight - 15);
+
+    if (i > 1) {
+      // Compact header
+      doc.setDrawColor(colors.border.r, colors.border.g, colors.border.b);
+      doc.setLineWidth(0.3);
+      doc.line(margin, margin + headerHeight - 2, pageWidth - margin, margin + headerHeight - 2);
+
+      doc.setFontSize(8);
+      doc.setTextColor(colors.secondary.r, colors.secondary.g, colors.secondary.b);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Practice Questions Report', margin, margin + headerHeight - 5);
+      doc.text(`${i}/${totalPages}`, pageWidth - margin, margin + headerHeight - 5, { align: 'right' });
+
+      // Compact footer
+      const footerY = pageHeight - margin - 3;
+      doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
+      doc.text(`${dateStr} • ${userInfo.name || 'Student'}`, pageWidth / 2, footerY, { align: 'center' });
+    }
   }
 
   const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
-  
+
   return new NextResponse(pdfBuffer, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="study-material-${userName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf"`
+      'Content-Disposition': `attachment; filename="practice-questions-${userInfo.name ? userInfo.name.replace(/\s+/g, '-') : 'user'}-${new Date().toISOString().split('T')[0]}.pdf"`
     }
   });
 }
