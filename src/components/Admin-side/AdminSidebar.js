@@ -94,6 +94,12 @@ const adminNavItems = [
     description: "Question performance and difficulty analysis",
   },
   {
+    title: "Bulk Insert Questions",
+    url: "/admin/questions/bulk-insert",
+    icon: FileQuestion,
+    description: "Upload CSV/XLSX to insert many questions",
+  },
+  {
     title: "Comments & Replies",
     url: "/admin/comments",
     icon: MessageSquare,
