@@ -20,9 +20,13 @@ import {
 import { THEME } from "@/theme";
 import { MessageSquare, Reply, Search, Trash2 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
+import { useUser } from "@clerk/nextjs";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AdminCommentsPage() {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const adminUserId = isLoaded && isSignedIn && user ? user.id : "admin";
+  const adminUsername = isLoaded && isSignedIn && user ? (user.username || user.fullName || "admin") : "admin";
   // const { isLoaded, isSignedIn, user } = useUser();
   // const [username, setUsername] = useState("");
   const [comments, setComments] = useState([]);
@@ -71,8 +75,8 @@ export default function AdminCommentsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: user.id,
-          username: user.username,
+          userId: adminUserId,
+          username: adminUsername,
           commentId: commentId,
           reply: replyText.trim(),
         }),
@@ -101,8 +105,8 @@ export default function AdminCommentsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          adminUserId: user.id,
-          adminUsername: user.username,
+          adminUserId: adminUserId,
+          adminUsername: adminUsername,
         }),
       });
 
