@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import UsersTable from "@/components/Admin-side/UsersTable";
+import UsersTableEnhanced from "@/components/Admin-side/UsersTableEnhanced";
 
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -44,7 +44,7 @@ export default function AdminDashboard() {
         {/* Content Area */}
         <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min" style={{ backgroundColor: THEME.neutral50 }}>
           <div className="p-6">
-            <UsersTable />
+            <UsersTableEnhanced />
           </div>
         </div>
       </div>

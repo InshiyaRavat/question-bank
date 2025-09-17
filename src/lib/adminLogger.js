@@ -36,6 +36,15 @@ export const ADMIN_ACTIONS = {
   PASSWORD_RESET_INITIATED: "password_reset_initiated",
   ACCOUNT_LOCKED: "account_locked",
   ACCOUNT_UNLOCKED: "account_unlocked",
+
+  // Email Actions
+  EMAIL_SENT: "email_sent",
+  EMAIL_BULK_SENT: "email_bulk_sent",
+  EMAIL_FAILED: "email_failed",
+
+  // Profile Management
+  USER_PROFILE_UPDATED: "user_profile_updated",
+  USER_PASSWORD_RESET: "user_password_reset",
 };
 
 export const RESOURCE_TYPES = {
