@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const AdminQuestionList = ({ searchTerm }) => {
+const AdminQuestionList = ({ searchTerm, fileOpenRef, onPdfChange, loadingExtract }) => {
   const [questionList, setQuestionList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -33,7 +33,6 @@ const AdminQuestionList = ({ searchTerm }) => {
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
-
 
   // Add question form states
   const [newQuestion, setNewQuestion] = useState("");
@@ -52,7 +51,7 @@ const AdminQuestionList = ({ searchTerm }) => {
       try {
         setLoading(true);
         const response = await fetch(`/api/question?userId=${user.id}`);
-        if (!response.ok) throw new Error('Failed to fetch questions');
+        if (!response.ok) throw new Error("Failed to fetch questions");
         const data = await response.json();
         // Ensure data is always an array
         setQuestionList(Array.isArray(data) ? data : []);
@@ -72,7 +71,7 @@ const AdminQuestionList = ({ searchTerm }) => {
     const fetchTopics = async () => {
       try {
         const response = await fetch("/api/topics");
-        if (!response.ok) throw new Error('Failed to fetch topics');
+        if (!response.ok) throw new Error("Failed to fetch topics");
         const data = await response.json();
         setTopics(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -105,7 +104,7 @@ const AdminQuestionList = ({ searchTerm }) => {
     if (selectedQuestions.size === filteredQuestions.length) {
       setSelectedQuestions(new Set());
     } else {
-      setSelectedQuestions(new Set(filteredQuestions.map(q => q.id)));
+      setSelectedQuestions(new Set(filteredQuestions.map((q) => q.id)));
     }
   };
 
@@ -122,25 +121,25 @@ const AdminQuestionList = ({ searchTerm }) => {
 
     setBulkDeleting(true);
     try {
-      const response = await fetch('/api/question/bulk-delete', {
-        method: 'DELETE',
+      const response = await fetch("/api/question/bulk-delete", {
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          questionIds: Array.from(selectedQuestions)
+          questionIds: Array.from(selectedQuestions),
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete questions');
+        throw new Error(errorData.error || "Failed to delete questions");
       }
 
       const result = await response.json();
 
       // Remove deleted questions from the list
-      setQuestionList(prev => prev.filter(q => !selectedQuestions.has(q.id)));
+      setQuestionList((prev) => prev.filter((q) => !selectedQuestions.has(q.id)));
       setSelectedQuestions(new Set());
       setBulkDeleteMode(false);
       setShowBulkDeleteModal(false);
@@ -288,7 +287,10 @@ const AdminQuestionList = ({ searchTerm }) => {
     } else if (field === "difficulty") {
       setEditValues((prev) => ({ ...prev, difficulty: selectedQuestion.difficulty || "medium" }));
     } else if (field === "tagsString") {
-      setEditValues((prev) => ({ ...prev, tagsString: Array.isArray(selectedQuestion.tags) ? selectedQuestion.tags.join(", ") : "" }));
+      setEditValues((prev) => ({
+        ...prev,
+        tagsString: Array.isArray(selectedQuestion.tags) ? selectedQuestion.tags.join(", ") : "",
+      }));
     } else if (field.startsWith("option-")) {
       const index = parseInt(field.split("-")[1]);
       setEditValues((prev) => ({ ...prev, [field]: selectedQuestion.options[index] }));
@@ -376,12 +378,7 @@ const AdminQuestionList = ({ searchTerm }) => {
           {/* Bulk Delete Controls */}
           {bulkDeleteMode && (
             <div className="flex gap-2 items-center">
-              <Button
-                onClick={handleSelectAll}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-              >
+              <Button onClick={handleSelectAll} variant="outline" size="sm" className="text-xs">
                 {selectedQuestions.size === filteredQuestions.length ? "Deselect All" : "Select All"}
               </Button>
               <Button
@@ -393,12 +390,7 @@ const AdminQuestionList = ({ searchTerm }) => {
               >
                 Delete Selected ({selectedQuestions.size})
               </Button>
-              <Button
-                onClick={toggleBulkDeleteMode}
-                variant="ghost"
-                size="sm"
-                className="text-xs"
-              >
+              <Button onClick={toggleBulkDeleteMode} variant="ghost" size="sm" className="text-xs">
                 Cancel
               </Button>
             </div>
@@ -408,7 +400,7 @@ const AdminQuestionList = ({ searchTerm }) => {
             <Button
               onClick={toggleBulkDeleteMode}
               variant={bulkDeleteMode ? "destructive" : "outline"}
-              className={`${bulkDeleteMode ? 'bg-red-50 text-red-600 border-red-200' : ''} text-sm`}
+              className={`${bulkDeleteMode ? "bg-red-50 text-red-600 border-red-200" : ""} text-sm`}
             >
               {bulkDeleteMode ? "Exit Bulk Mode" : "Bulk Delete"}
             </Button>
@@ -421,6 +413,19 @@ const AdminQuestionList = ({ searchTerm }) => {
               </div>
               Create Question
             </button>
+            {/* Upload PDF next to Create Question */}
+            <div className="flex items-center">
+              <input ref={fileOpenRef} type="file" accept="application/pdf" onChange={onPdfChange} className="hidden" />
+              <Button
+                type="button"
+                variant="outline"
+                className="text-sm"
+                onClick={() => fileOpenRef?.current?.click()}
+                disabled={!!loadingExtract}
+              >
+                {loadingExtract ? "Extracting…" : "Upload PDF"}
+              </Button>
+            </div>
           </div>
         </div>
         {/* <button
@@ -501,9 +506,10 @@ const AdminQuestionList = ({ searchTerm }) => {
           filteredQuestions.map((q, index) => (
             <div
               key={q.id || index}
-              className={`p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center transition-all ${selectedQuestions.has(q.id) ? 'bg-blue-50 border-2 border-blue-200' : ''
-                }`}
-              style={{ backgroundColor: selectedQuestions.has(q.id) ? '#eff6ff' : THEME.neutral50 }}
+              className={`p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center transition-all ${
+                selectedQuestions.has(q.id) ? "bg-blue-50 border-2 border-blue-200" : ""
+              }`}
+              style={{ backgroundColor: selectedQuestions.has(q.id) ? "#eff6ff" : THEME.neutral50 }}
             >
               <div className="flex items-start gap-3 flex-1">
                 {/* Bulk Select Checkbox */}
@@ -521,14 +527,10 @@ const AdminQuestionList = ({ searchTerm }) => {
                   </p>
                   <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
                     {q.difficulty && (
-                      <span className="capitalize px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                        {q.difficulty}
-                      </span>
+                      <span className="capitalize px-2 py-1 bg-blue-100 text-blue-800 rounded">{q.difficulty}</span>
                     )}
                     {Array.isArray(q.tags) && q.tags.length > 0 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded">
-                        {q.tags.join(", ")}
-                      </span>
+                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded">{q.tags.join(", ")}</span>
                     )}
                   </div>
                 </div>
@@ -566,7 +568,8 @@ const AdminQuestionList = ({ searchTerm }) => {
               Delete Multiple Questions
             </DialogTitle>
             <DialogDescription style={{ color: THEME.textSecondary }}>
-              You are about to permanently delete {selectedQuestions.size} question{selectedQuestions.size !== 1 ? 's' : ''}. This action cannot be undone.
+              You are about to permanently delete {selectedQuestions.size} question
+              {selectedQuestions.size !== 1 ? "s" : ""}. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
@@ -583,7 +586,7 @@ const AdminQuestionList = ({ searchTerm }) => {
               </h4>
               <div className="space-y-2">
                 {filteredQuestions
-                  .filter(q => selectedQuestions.has(q.id))
+                  .filter((q) => selectedQuestions.has(q.id))
                   .map((question, idx) => (
                     <div
                       key={question.id}
@@ -597,8 +600,7 @@ const AdminQuestionList = ({ searchTerm }) => {
                       <span className="font-medium text-xs text-gray-500 mr-2">#{idx + 1}</span>
                       {question.questionText.length > 100
                         ? `${question.questionText.substring(0, 100)}...`
-                        : question.questionText
-                      }
+                        : question.questionText}
                     </div>
                   ))}
               </div>
@@ -617,7 +619,8 @@ const AdminQuestionList = ({ searchTerm }) => {
                   Warning:
                 </span>
                 <p className="text-sm mt-1" style={{ color: "#92400e" }}>
-                  These questions will be permanently removed and cannot be recovered. Topic question counts will be updated automatically.
+                  These questions will be permanently removed and cannot be recovered. Topic question counts will be
+                  updated automatically.
                 </p>
               </div>
             </div>
@@ -731,8 +734,9 @@ const AdminQuestionList = ({ searchTerm }) => {
                   disabled={newOptions.every((opt) => opt.trim() === "")}
                 >
                   <SelectTrigger
-                    className={`w-full ${newOptions.every((opt) => opt.trim() === "") ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                    className={`w-full ${
+                      newOptions.every((opt) => opt.trim() === "") ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                     style={{
                       borderColor: THEME.neutral300,
                       backgroundColor: THEME.white,
@@ -1042,7 +1046,9 @@ const AdminQuestionList = ({ searchTerm }) => {
                       color: THEME.textPrimary,
                     }}
                   >
-                    <p className="text-sm whitespace-pre-line">{selectedQuestion.explanation || "No explanation provided."}</p>
+                    <p className="text-sm whitespace-pre-line">
+                      {selectedQuestion.explanation || "No explanation provided."}
+                    </p>
                     <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
                       <Edit3 className="w-3 h-3" />
                       Click to edit
@@ -1069,19 +1075,37 @@ const AdminQuestionList = ({ searchTerm }) => {
                       </SelectContent>
                     </Select>
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleFieldSave("difficulty")} style={{ backgroundColor: THEME.primary }} className="text-white hover:opacity-90">
+                      <Button
+                        size="sm"
+                        onClick={() => handleFieldSave("difficulty")}
+                        style={{ backgroundColor: THEME.primary }}
+                        className="text-white hover:opacity-90"
+                      >
                         <Save className="w-3 h-3 mr-1" />
                         Save
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleFieldCancel("difficulty")} style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleFieldCancel("difficulty")}
+                        style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}
+                      >
                         <X className="w-3 h-3 mr-1" />
                         Cancel
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div onClick={() => handleFieldEdit("difficulty")} className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow" style={{ borderColor: THEME.neutral300, backgroundColor: THEME.neutral50, color: THEME.textPrimary }}>
-                    <p className="text-sm capitalize">{selectedQuestion.difficulty || 'medium'}</p>
+                  <div
+                    onClick={() => handleFieldEdit("difficulty")}
+                    className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow"
+                    style={{
+                      borderColor: THEME.neutral300,
+                      backgroundColor: THEME.neutral50,
+                      color: THEME.textPrimary,
+                    }}
+                  >
+                    <p className="text-sm capitalize">{selectedQuestion.difficulty || "medium"}</p>
                     <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
                       <Edit3 className="w-3 h-3" />
                       Click to edit
@@ -1097,21 +1121,46 @@ const AdminQuestionList = ({ searchTerm }) => {
                 </label>
                 {editingFields.tagsString ? (
                   <div className="space-y-2">
-                    <Input value={editValues.tagsString} onChange={(e) => handleInputChange("tagsString", e.target.value)} />
+                    <Input
+                      value={editValues.tagsString}
+                      onChange={(e) => handleInputChange("tagsString", e.target.value)}
+                    />
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleFieldSave("tagsString")} style={{ backgroundColor: THEME.primary }} className="text-white hover:opacity-90">
+                      <Button
+                        size="sm"
+                        onClick={() => handleFieldSave("tagsString")}
+                        style={{ backgroundColor: THEME.primary }}
+                        className="text-white hover:opacity-90"
+                      >
                         <Save className="w-3 h-3 mr-1" />
                         Save
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleFieldCancel("tagsString")} style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleFieldCancel("tagsString")}
+                        style={{ borderColor: THEME.neutral300, color: THEME.textSecondary }}
+                      >
                         <X className="w-3 h-3 mr-1" />
                         Cancel
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div onClick={() => handleFieldEdit("tagsString")} className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow" style={{ borderColor: THEME.neutral300, backgroundColor: THEME.neutral50, color: THEME.textPrimary }}>
-                    <p className="text-sm">{Array.isArray(selectedQuestion.tags) && selectedQuestion.tags.length ? selectedQuestion.tags.join(", ") : 'No tags'}</p>
+                  <div
+                    onClick={() => handleFieldEdit("tagsString")}
+                    className="p-3 border rounded-md cursor-pointer hover:shadow-sm transition-shadow"
+                    style={{
+                      borderColor: THEME.neutral300,
+                      backgroundColor: THEME.neutral50,
+                      color: THEME.textPrimary,
+                    }}
+                  >
+                    <p className="text-sm">
+                      {Array.isArray(selectedQuestion.tags) && selectedQuestion.tags.length
+                        ? selectedQuestion.tags.join(", ")
+                        : "No tags"}
+                    </p>
                     <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: THEME.textSecondary }}>
                       <Edit3 className="w-3 h-3" />
                       Click to edit
@@ -1319,7 +1368,7 @@ const AdminQuestionList = ({ searchTerm }) => {
         </DialogContent>
       </Dialog>
       <ToastContainer />
-    </div >
+    </div>
   );
 };
 

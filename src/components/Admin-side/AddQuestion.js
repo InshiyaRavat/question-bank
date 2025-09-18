@@ -5,6 +5,9 @@ import pdfToText from "react-pdftotext";
 import { THEME } from "@/theme";
 import { toast, ToastContainer } from "react-toastify";
 import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
+import { Textarea } from "../ui/textarea";
 
 const AddQuestion = () => {
   const [topics, setTopics] = useState([]);
@@ -13,6 +16,10 @@ const AddQuestion = () => {
   const [correctAnswer, setCorrectAnswer] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("");
   const router = useRouter();
+  const [pdfFile, setPdfFile] = useState(null);
+  const [extracted, setExtracted] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [loadingExtract, setLoadingExtract] = useState(false);
 
   useEffect(() => {
     fetch("/api/topics")
@@ -70,21 +77,36 @@ const AddQuestion = () => {
 
   const extractText = async (event) => {
     const file = event.target.files[0];
+    setPdfFile(file || null);
+    setExtracted([]);
+    if (!file) return;
     try {
-      const text = await pdfToText(file);
-      const questions = parseQuestionsFromText(text);
-      await Promise.all(
-        questions.map(async (q) => {
-          await fetch("/api/question", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(q),
-          });
-        })
-      );
-      toast.success("Questions extracted and added successfully!");
+      setLoadingExtract(true);
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/ai/pdf-process", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to extract");
+      const items = Array.isArray(data.questions) ? data.questions : [];
+      if (items.length === 0) {
+        toast.warn("No questions found in the PDF.");
+        return;
+      }
+      const editable = items.map((q, idx) => ({
+        id: idx,
+        subjectName: q.subjectName || "General",
+        topicName: q.topicName || "Misc",
+        questionText: q.questionText || "",
+        options: q.options?.slice(0, 5) || ["", "", "", ""],
+        correctOptionIdx: Number.isInteger(q.correctOptionIdx) ? q.correctOptionIdx : 0,
+        explanation: q.explanation || "",
+      }));
+      setExtracted(editable);
+      setModalOpen(true);
     } catch (error) {
-      toast.error("Failed to extract text from PDF", error.message);
+      toast.error("Failed to extract questions: " + (error.message || ""));
+    } finally {
+      setLoadingExtract(false);
     }
   };
 
@@ -123,28 +145,83 @@ const AddQuestion = () => {
     return structuredQuestions;
   };
 
+  const handleEditChange = (idx, field, value) => {
+    setExtracted((prev) => prev.map((q, i) => (i === idx ? { ...q, [field]: value } : q)));
+  };
+
+  const handleEditOption = (idx, optIdx, value) => {
+    setExtracted((prev) =>
+      prev.map((q, i) => {
+        if (i !== idx) return q;
+        const nextOptions = [...(q.options || [])];
+        nextOptions[optIdx] = value;
+        return { ...q, options: nextOptions };
+      })
+    );
+  };
+
+  const submitExtracted = async () => {
+    try {
+      if (!extracted.length) return;
+      const items = extracted.map((q) => ({
+        subjectName: q.subjectName?.trim() || "General",
+        topicName: q.topicName?.trim() || "Misc",
+        questionText: q.questionText?.trim() || "",
+        optionA: q.options?.[0] || "",
+        optionB: q.options?.[1] || "",
+        optionC: q.options?.[2] || "",
+        optionD: q.options?.[3] || "",
+        optionE: q.options?.[4] || "",
+        correctOptionIdx: q.correctOptionIdx ?? 0,
+        explanation: q.explanation || "",
+        difficulty: "",
+        tags: "",
+      }));
+
+      const res = await fetch("/api/admin/questions/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "insert", items }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Insert failed");
+      toast.success(`Inserted ${data.inserted} question(s)`);
+      if (data.skipped?.length) {
+        toast.warn(`${data.skipped.length} item(s) skipped`);
+      }
+      setModalOpen(false);
+      setExtracted([]);
+    } catch (err) {
+      toast.error("Failed to submit questions: " + (err.message || ""));
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-blue-200 p-4 sm:p-8 flex flex-col items-center`}>
       <div className="w-full max-w-3xl bg-[#f9fafb] rounded-xl shadow-md p-6 sm:p-10 space-y-6">
-        <h2 className={`text-2xl sm:text-3xl font-bold text-center`}
-          style={{ color: THEME.primary }}>Add New Question</h2>
+        <h2 className={`text-2xl sm:text-3xl font-bold text-center`} style={{ color: THEME.primary }}>
+          Add New Question
+        </h2>
 
-        {/* PDF Upload */}
+        {/* PDF Upload via AI SDK extractor */}
         <div>
-          <label className={`block font-semibold mb-2`}
-            style={{ color: THEME.neutral900 }}>Upload PDF for Bulk Questions</label>
+          <label className={`block font-semibold mb-2`} style={{ color: THEME.neutral900 }}>
+            Upload PDF for Bulk Questions
+          </label>
           <input
             type="file"
             accept="application/pdf"
             onChange={extractText}
             className={`block w-full text-sm text-gray-700 border border-[${THEME.primary_1}] rounded-md p-2 bg-[#f8f8f8]`}
           />
+          {loadingExtract && <p className="text-sm text-gray-600 mt-2">Extracting questions...</p>}
         </div>
 
         {/* Question Input */}
         <div>
-          <label className={`block font-semibold mb-2`}
-            style={{ color: THEME.neutral900 }}>Question</label>
+          <label className={`block font-semibold mb-2`} style={{ color: THEME.neutral900 }}>
+            Question
+          </label>
           <textarea
             rows="3"
             className={`w-full border placeholder-black border-blue-100 rounded-md p-3 focus:ring-2 focus:ring-blue-200 text-black`}
@@ -156,8 +233,9 @@ const AddQuestion = () => {
 
         {/* Options Input */}
         <div>
-          <label className={`block font-semibold mb-2`}
-            style={{ color: THEME.neutral900 }}>Options</label>
+          <label className={`block font-semibold mb-2`} style={{ color: THEME.neutral900 }}>
+            Options
+          </label>
           <div className="space-y-3">
             {options.map((opt, index) => (
               <Input
@@ -174,8 +252,9 @@ const AddQuestion = () => {
 
         {/* Correct Answer */}
         <div>
-          <label className={`block font-semibold mb-2`}
-            style={{ color: THEME.neutral900 }}>Correct Answer</label>
+          <label className={`block font-semibold mb-2`} style={{ color: THEME.neutral900 }}>
+            Correct Answer
+          </label>
           <select
             className={`w-full border border-[${THEME.primary_1}] p-3 rounded-md text-gray-700 focus:ring-2 focus:ring-[${THEME.primary_2}]`}
             value={correctAnswer}
@@ -190,8 +269,9 @@ const AddQuestion = () => {
 
         {/* Topic Dropdown */}
         <div>
-          <label className={`block font-semibold mb-2`}
-            style={{ color: THEME.neutral900 }}>Select Topic</label>
+          <label className={`block font-semibold mb-2`} style={{ color: THEME.neutral900 }}>
+            Select Topic
+          </label>
           <select
             className={`w-full border border-[${THEME.primary_1}] p-3 rounded-md text-gray-700 focus:ring-2 focus:ring-[${THEME.primary_2}]`}
             value={selectedTopic}
@@ -215,6 +295,74 @@ const AddQuestion = () => {
         </button>
       </div>
       <ToastContainer />
+
+      {/* Modal for editing extracted questions */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit Extracted Questions ({extracted.length})</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 max-h-[60vh] overflow-auto pr-2">
+            {extracted.map((q, idx) => (
+              <div key={idx} className="border rounded-md p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    placeholder="Subject"
+                    value={q.subjectName}
+                    onChange={(e) => handleEditChange(idx, "subjectName", e.target.value)}
+                  />
+                  <Input
+                    placeholder="Topic"
+                    value={q.topicName}
+                    onChange={(e) => handleEditChange(idx, "topicName", e.target.value)}
+                  />
+                </div>
+                <Textarea
+                  rows={3}
+                  placeholder="Question text"
+                  value={q.questionText}
+                  onChange={(e) => handleEditChange(idx, "questionText", e.target.value)}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  {(q.options || ["", "", "", "", ""]).slice(0, 5).map((opt, oi) => (
+                    <Input
+                      key={oi}
+                      placeholder={`Option ${oi + 1}`}
+                      value={opt}
+                      onChange={(e) => handleEditOption(idx, oi, e.target.value)}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-3 items-center">
+                  <div>
+                    <label className="text-sm text-gray-700">Correct Option Index (0-4)</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={4}
+                      value={q.correctOptionIdx}
+                      onChange={(e) => handleEditChange(idx, "correctOptionIdx", Number(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-700">Explanation</label>
+                    <Input
+                      value={q.explanation}
+                      onChange={(e) => handleEditChange(idx, "explanation", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={submitExtracted}>Submit All</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

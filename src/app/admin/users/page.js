@@ -17,7 +17,7 @@ export default function AdminDashboard() {
   // }, [isLoaded, user, isSignedIn]);
 
   return (
-    <SidebarInset className='text-black'>
+    <SidebarInset className="text-black">
       {/* HEADER */}
       <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-white">
         <div className="flex items-center gap-2 px-4">
