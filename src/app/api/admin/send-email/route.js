@@ -26,7 +26,7 @@ async function sendEmail(to, subject, message, attachment = null) {
     }
 
     // Create transporter using your existing Gmail configuration
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER, // From your .env file

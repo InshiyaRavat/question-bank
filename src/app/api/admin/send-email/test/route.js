@@ -20,7 +20,7 @@ export async function GET(req) {
     }
 
     // Test email configuration
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
