@@ -5,12 +5,12 @@ import { getAdminActivityLogs, getAdminActivityStats, logAdminActivity } from "@
 // GET /api/admin/activity-logs - Get admin activity logs with filtering and pagination
 export async function GET(req) {
   try {
-    // const { sessionClaims } = await auth();
+    const { sessionClaims } = await auth();
 
-    // // Check if user is admin
-    // if (sessionClaims?.metadata?.role !== "admin") {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    // }
+    // Check if user is admin
+    if (sessionClaims?.metadata?.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
 
     const { searchParams } = new URL(req.url);
 

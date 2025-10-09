@@ -45,6 +45,7 @@ const isPublicRoute = createRouteMatcher([
   "/reset-password",
   "/", // Landing/subscription page
   "/pay",
+  "/api/stripe(.*)",
 ]);
 const isAdminRoute = createRouteMatcher(["/admin(.*)", "/api/admin(.*)"]);
 

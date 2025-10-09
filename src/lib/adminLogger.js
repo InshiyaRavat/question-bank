@@ -31,6 +31,7 @@ export const ADMIN_ACTIONS = {
   ADMIN_LOGIN: "admin_login",
   ADMIN_LOGOUT: "admin_logout",
   SETTINGS_UPDATED: "settings_updated",
+  FREE_TRIAL_SETTINGS_UPDATED: "free_trial_settings_updated",
 
   // Security Actions
   PASSWORD_RESET_INITIATED: "password_reset_initiated",

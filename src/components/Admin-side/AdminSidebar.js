@@ -151,6 +151,12 @@ const settingsItems = [
     description: "Upload and manage site logo",
   },
   {
+    title: "Free Trial Settings",
+    url: "/admin/free-trial-settings",
+    icon: BookOpen,
+    description: "Configure free trial limits",
+  },
+  {
     title: "System Settings",
     url: "/admin/settings",
     icon: Settings,
@@ -204,8 +210,9 @@ export function AdminSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={item.description}
-                      className={`hover:bg-blue-200 hover:text-sidebar-accent-foreground ${isActive ? "text-blue-700" : ""
-                        }`}
+                      className={`hover:bg-blue-200 hover:text-sidebar-accent-foreground ${
+                        isActive ? "text-blue-700" : ""
+                      }`}
                     >
                       <Link href={item.url} className="flex items-center gap-3">
                         <item.icon className="h-4 w-4" />

@@ -87,16 +87,26 @@ model Refund {
 }
 
 model Subscription {
-  id                   Int      @id @default(autoincrement())
-  userId               String   @map("user_id")
+  id                   Int       @id @default(autoincrement())
+  userId               String    @map("user_id")
   status               String // active, canceled, past_due, trialing, etc.
   duration             Int // in months (6 or 12)
-  stripeCustomerId     String   @map("stripe_customer_id")
-  stripeSubscriptionId String   @unique @map("stripe_subscription_id")
-  stripePriceId        String   @map("stripe_price_id")
-  subscribedAt         DateTime @default(now()) @map("subscribed_at")
-  currentPeriodEnd     DateTime @map("current_period_end")
-  cancelAtPeriodEnd    Boolean  @default(false) @map("cancel_at_period_end")
+  stripeCustomerId     String    @map("stripe_customer_id")
+  stripeSubscriptionId String    @unique @map("stripe_subscription_id")
+  stripePriceId        String    @map("stripe_price_id")
+  stripeProductId      String?   @map("stripe_product_id")
+  subscribedAt         DateTime  @default(now()) @map("subscribed_at")
+  currentPeriodEnd     DateTime  @map("current_period_end")
+  cancelAtPeriodEnd    Boolean   @default(false) @map("cancel_at_period_end")
+  trialEnd             DateTime? @map("trial_end")
+  nextBillingDate      DateTime? @map("next_billing_date")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@index([currentPeriodEnd])
 }
 
 model Topic {
@@ -212,13 +222,13 @@ model SiteSettings {
 }
 
 model Feedback {
-  id          Int      @id @default(autoincrement())
-  userId      String   @map("user_id")
-  questionId  Int?     @map("question_id")
-  type        String   // 'report' or 'general'
-  feedback    String
-  screenshot  String?
-  createdAt   DateTime @default(now()) @map("created_at")
+  id         Int      @id @default(autoincrement())
+  userId     String   @map("user_id")
+  questionId Int?     @map("question_id")
+  type       String // 'report' or 'general'
+  feedback   String
+  screenshot String?
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@index([questionId])
@@ -238,8 +248,8 @@ model StudyPlan {
   status          String   @default("active") // 'active', 'paused', 'completed', 'cancelled'
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
-  
-  dailyProgress   DailyProgress[]
+
+  dailyProgress DailyProgress[]
 
   @@index([userId])
   @@index([status])
@@ -247,34 +257,34 @@ model StudyPlan {
 }
 
 model DailyProgress {
-  id                  Int       @id @default(autoincrement())
-  userId              String    @map("user_id")
-  planId              Int       @map("plan_id")
-  date                DateTime  @map("date")
-  questionsCompleted  Int       @default(0) @map("questions_completed")
-  questionsTarget     Int       @map("questions_target")
-  accuracy            Float     @default(0.0)
-  timeSpent           Int       @default(0) @map("time_spent") // in minutes
-  streak              Int       @default(0)
-  createdAt           DateTime  @default(now()) @map("created_at")
-  
-  plan                StudyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  id                 Int      @id @default(autoincrement())
+  userId             String   @map("user_id")
+  planId             Int      @map("plan_id")
+  date               DateTime @map("date")
+  questionsCompleted Int      @default(0) @map("questions_completed")
+  questionsTarget    Int      @map("questions_target")
+  accuracy           Float    @default(0.0)
+  timeSpent          Int      @default(0) @map("time_spent") // in minutes
+  streak             Int      @default(0)
+  createdAt          DateTime @default(now()) @map("created_at")
 
+  plan StudyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, planId, date])
   @@index([userId])
   @@index([planId])
   @@index([date])
-  @@unique([userId, planId, date])
 }
 
 model Achievement {
   id          Int      @id @default(autoincrement())
   userId      String   @map("user_id")
-  type        String   // 'plan_completion', 'streak', 'accuracy', 'questions_milestone'
+  type        String // 'plan_completion', 'streak', 'accuracy', 'questions_milestone'
   title       String
   description String
-  icon        String?  // emoji or icon name
+  icon        String? // emoji or icon name
   earnedAt    DateTime @default(now()) @map("earned_at")
-  metadata    Json?    // additional data like streak count, accuracy percentage, etc.
+  metadata    Json? // additional data like streak count, accuracy percentage, etc.
 
   @@index([userId])
   @@index([type])
@@ -293,11 +303,11 @@ model Settings {
 }
 
 model UserRetakeLimit {
-  id          Int      @id @default(autoincrement())
-  userId      String   @map("user_id")
-  maxRetakes  Int      @default(-1) @map("max_retakes") // -1 means unlimited
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id         Int      @id @default(autoincrement())
+  userId     String   @map("user_id")
+  maxRetakes Int      @default(-1) @map("max_retakes") // -1 means unlimited
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@unique([userId])
   @@index([userId])
@@ -312,4 +322,31 @@ model UserStudyMaterialPermission {
 
   @@unique([userId])
   @@index([userId])
+}
+
+model FreeTrialSettings {
+  id                 Int      @id @default(autoincrement())
+  dailyQuestionLimit Int      @default(5) @map("daily_question_limit")
+  allowedTopics      Int[]    @default([]) @map("allowed_topics") // Array of topic IDs
+  isActive           Boolean  @default(true) @map("is_active")
+  description        String?  @default("Free trial allows limited daily questions from selected topics")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  updatedBy          String?  @map("updated_by") // Admin who updated the settings
+
+  @@index([isActive])
+}
+
+model UserFreeTrialUsage {
+  id            Int      @id @default(autoincrement())
+  userId        String   @map("user_id")
+  date          DateTime @map("date") // Date of usage (YYYY-MM-DD)
+  questionsUsed Int      @default(0) @map("questions_used")
+  topicId       Int      @map("topic_id") // Topic used on this date
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, date, topicId])
+  @@index([userId])
+  @@index([date])
+  @@index([topicId])
 }

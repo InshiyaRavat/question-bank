@@ -1,6 +1,7 @@
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { PrismaClient } from "@prisma/client";
 import { logAdminActivity, ADMIN_ACTIONS, RESOURCE_TYPES, extractClientInfo } from "@/lib/adminLogger";
+import { stripe } from "@/lib/stripe.js";
 
 const prisma = new PrismaClient();
 
@@ -242,11 +243,26 @@ export async function POST(req) {
 
       // Optionally grant lifetime subscription (treat as long duration, e.g., 1200 months ~ 100 years)
       if (grantLifetime) {
+        // Create a Stripe customer for lifetime access users
+        const customer = await stripe.customers.create({
+          email: email,
+          metadata: {
+            app_user_id: created.id,
+            app: "question-bank",
+            lifetime_access: "true",
+          },
+        });
+
         await prisma.subscription.create({
           data: {
             userId: created.id,
             status: "active",
             duration: 1200,
+            stripeCustomerId: customer.id,
+            stripeSubscriptionId: `lifetime_${created.id}_${Date.now()}`,
+            stripePriceId: "lifetime_access",
+            currentPeriodEnd: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000), // 100 years from now
+            cancelAtPeriodEnd: false,
           },
         });
       }
@@ -420,11 +436,26 @@ export async function POST(req) {
 
       await clerk.users.updateUser(userId, { publicMetadata: { role: "student" } });
 
+      // Create a Stripe customer for lifetime access users
+      const customer = await stripe.customers.create({
+        email: target.emailAddresses?.[0]?.emailAddress,
+        metadata: {
+          app_user_id: userId,
+          app: "question-bank",
+          lifetime_access: "true",
+        },
+      });
+
       await prisma.subscription.create({
         data: {
           userId,
           status: "active",
           duration: 1200,
+          stripeCustomerId: customer.id,
+          stripeSubscriptionId: `lifetime_${userId}_${Date.now()}`, // Unique identifier for lifetime access
+          stripePriceId: "lifetime_access", // Special price ID for lifetime
+          currentPeriodEnd: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000), // 100 years from now
+          cancelAtPeriodEnd: false,
         },
       });
       return new Response(JSON.stringify({ success: true }), {

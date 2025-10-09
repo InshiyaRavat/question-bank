@@ -52,49 +52,43 @@ export default function SubscriptionPage() {
     if (!subscription) return;
     setActionLoading(true);
     try {
-      if (action === "upgrade") {
-        if (subscription.duration === 12) return alert("Already at maximum plan.");
-        const upgraded = new Date(subscription.subscribedAt);
-        upgraded.setMonth(upgraded.getMonth() + 6);
-        await fetch(`/api/subscription/${subscription.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ duration: 12, subscribedAt: upgraded.toISOString() }),
-        });
-        alert("Subscription upgraded!");
-      } else if (action === "downgrade") {
-        if (subscription.duration === 6) return alert("Already at minimum plan.");
-        const downgraded = new Date(subscription.subscribedAt);
-        downgraded.setMonth(downgraded.getMonth() - 6);
-        await fetch(`/api/subscription/${subscription.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ duration: 6, subscribedAt: downgraded.toISOString() }),
-        });
-        alert("Subscription downgraded.");
-      } else if (action === "cancel") {
-        if (subscription.status === "inactive") return alert("Already canceled.");
-        await fetch(`/api/subscription/${subscription.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "inactive" }),
-        });
-        alert("Subscription canceled.");
-      } else if (action === "renew") {
-        const res = await fetch(`/api/stripe/renew`, {
+      if (action === "manage") {
+        // Open Stripe Customer Portal for subscription management
+        const response = await fetch("/api/stripe/customer-portal", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subscriptionId: subscription.id, userId: user.id })
         });
-        const json = await res.json();
-        if (json.url) {
-          window.location.href = json.url; // redirect to Stripe Checkout
+
+        const data = await response.json();
+
+        if (data.success && data.url) {
+          window.location.href = data.url;
         } else {
-          alert("Failed to renew subscription.");
+          alert("Failed to open subscription management. Please try again.");
+        }
+      } else if (action === "renew") {
+        // Create a new checkout session for renewal
+        const response = await fetch("/api/stripe/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            duration: subscription.duration,
+            successUrl: `${window.location.origin}/subscription/success`,
+            cancelUrl: `${window.location.origin}/subscription`,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.url) {
+          window.location.href = data.url;
+        } else {
+          alert("Failed to create renewal session. Please try again.");
         }
       }
     } catch (e) {
-      alert("Action failed. Try again.");
+      console.error("Action failed:", e);
+      alert("Action failed. Please try again.");
     } finally {
       setActionLoading(false);
       fetchSubscription();
@@ -134,8 +128,9 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Status</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${subscription.status === "active" ? "text-green-700" : "text-red-700"
-                      }`}
+                    className={`text-lg font-semibold mt-1 ${
+                      subscription.status === "active" ? "text-green-700" : "text-red-700"
+                    }`}
                   >
                     {subscription.status}
                   </div>
@@ -143,8 +138,9 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Days Remaining</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
-                      }`}
+                    className={`text-lg font-semibold mt-1 ${
+                      daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
+                    }`}
                   >
                     {daysRemaining == null ? "-" : daysRemaining <= 0 ? "Expired" : `${daysRemaining} days`}
                   </div>
@@ -158,8 +154,9 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Expires On</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
-                      }`}
+                    className={`text-lg font-semibold mt-1 ${
+                      daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
+                    }`}
                   >
                     {expiryDate ? expiryDate.toLocaleDateString() : "-"}
                   </div>
@@ -174,32 +171,27 @@ export default function SubscriptionPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 className="inline-flex items-center gap-2 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-                onClick={() => performAction("renew")}
-                disabled={actionLoading || loading}
-              >
-                <RefreshCw className="w-4 h-4" /> Renew
-              </button>
-              <button
-                className="inline-flex items-center gap-2 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
-                onClick={() => performAction("upgrade")}
+                onClick={() => performAction("manage")}
                 disabled={actionLoading || loading || !subscription}
               >
-                <ArrowUpRight className="w-4 h-4" /> Upgrade
+                <CreditCard className="w-4 h-4" /> Manage Subscription
               </button>
-              <button
-                className="inline-flex items-center gap-2 px-4 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600 disabled:opacity-60"
-                onClick={() => performAction("downgrade")}
-                disabled={actionLoading || loading || !subscription}
-              >
-                <ArrowDownLeft className="w-4 h-4" /> Downgrade
-              </button>
-              <button
-                className="inline-flex items-center gap-2 px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
-                onClick={() => performAction("cancel")}
-                disabled={actionLoading || loading || !subscription}
-              >
-                <XCircle className="w-4 h-4" /> Cancel
-              </button>
+              {subscription?.status === "canceled" || subscription?.status === "past_due" ? (
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                  onClick={() => performAction("renew")}
+                  disabled={actionLoading || loading}
+                >
+                  <RefreshCw className="w-4 h-4" /> Renew Subscription
+                </button>
+              ) : null}
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Use "Manage Subscription" to update your plan, change payment methods, view
+                billing history, or cancel your subscription. All changes are handled securely through Stripe.
+              </p>
             </div>
           </section>
         </main>
