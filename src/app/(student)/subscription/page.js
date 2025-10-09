@@ -128,9 +128,8 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Status</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${
-                      subscription.status === "active" ? "text-green-700" : "text-red-700"
-                    }`}
+                    className={`text-lg font-semibold mt-1 ${subscription.status === "active" ? "text-green-700" : "text-red-700"
+                      }`}
                   >
                     {subscription.status}
                   </div>
@@ -138,9 +137,8 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Days Remaining</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${
-                      daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
-                    }`}
+                    className={`text-lg font-semibold mt-1 ${daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
+                      }`}
                   >
                     {daysRemaining == null ? "-" : daysRemaining <= 0 ? "Expired" : `${daysRemaining} days`}
                   </div>
@@ -154,9 +152,8 @@ export default function SubscriptionPage() {
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <div className="text-xs text-gray-600 uppercase tracking-wide">Expires On</div>
                   <div
-                    className={`text-lg font-semibold mt-1 ${
-                      daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
-                    }`}
+                    className={`text-lg font-semibold mt-1 ${daysRemaining != null && daysRemaining <= 0 ? "text-red-700" : "text-gray-900"
+                      }`}
                   >
                     {expiryDate ? expiryDate.toLocaleDateString() : "-"}
                   </div>
@@ -189,7 +186,7 @@ export default function SubscriptionPage() {
 
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Use "Manage Subscription" to update your plan, change payment methods, view
+                <strong>Note:</strong> Use &quot;Manage Subscription&quot; to update your plan, change payment methods, view
                 billing history, or cancel your subscription. All changes are handled securely through Stripe.
               </p>
             </div>

@@ -14,7 +14,7 @@ export default function SubscriptionCancelPage() {
         </div>
 
         <div className="bg-yellow-50 rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-yellow-900 mb-2">What's Next?</h3>
+          <h3 className="font-semibold text-yellow-900 mb-2">What&apos;s Next?</h3>
           <p className="text-yellow-700 text-sm">
             You can try again anytime or explore our free features. Contact support if you need assistance.
           </p>
