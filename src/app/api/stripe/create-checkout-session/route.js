@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { stripe, STRIPE_CONFIG, getPriceIdByDuration, validateStripeConfig } from "@/lib/stripe.js";
+import { stripe, STRIPE_CONFIG, getPriceIdByDuration } from "@/lib/stripe.js";
+import prisma from "@/lib/prisma";
 import { ensureStripeCustomer } from "@/lib/billing.js";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -9,15 +10,45 @@ import { currentUser } from "@clerk/nextjs/server";
  */
 export async function POST(req) {
   try {
-    // Validate Stripe configuration
-    validateStripeConfig();
+    // Soft-validate Stripe env: ensure secret key exists; price resolution is handled below
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
+    }
 
     const body = await req.json();
-    const { duration, successUrl, cancelUrl } = body;
+    const { duration, planId, successUrl, cancelUrl } = body;
 
-    // Validate input
-    if (!duration || ![6, 12].includes(duration)) {
-      return NextResponse.json({ error: "Invalid duration. Must be 6 or 12 months." }, { status: 400 });
+    // Determine price: prefer planId (admin-defined), fallback to legacy duration mapping
+    let priceId = null;
+    let resolvedDuration = duration;
+    if (planId) {
+      const plan = await prisma.subscriptionPlan.findUnique({ where: { id: Number(planId) } });
+      if (!plan || !plan.isActive) {
+        return NextResponse.json({ error: "Selected plan is not available for checkout" }, { status: 400 });
+      }
+      // Prefer plan.stripePriceId when present
+      if (plan.stripePriceId) {
+        priceId = plan.stripePriceId;
+      } else {
+        // Fallback to legacy duration-based pricing using plan.durationMonths
+        resolvedDuration = plan.durationMonths;
+        if (!resolvedDuration || ![6, 12].includes(resolvedDuration)) {
+          return NextResponse.json({ error: "Selected plan is missing Stripe price and unsupported duration" }, { status: 400 });
+        }
+        priceId = getPriceIdByDuration(resolvedDuration);
+        if (!priceId) {
+          return NextResponse.json({ error: `No price configured for ${resolvedDuration}-month plan` }, { status: 400 });
+        }
+      }
+    } else {
+      // Legacy fallback: duration-based pricing
+      if (!resolvedDuration || ![6, 12].includes(resolvedDuration)) {
+        return NextResponse.json({ error: "Invalid duration. Must be 6 or 12 months." }, { status: 400 });
+      }
+      priceId = getPriceIdByDuration(resolvedDuration);
+      if (!priceId) {
+        return NextResponse.json({ error: `No price configured for ${resolvedDuration}-month plan` }, { status: 400 });
+      }
     }
 
     // Get current user
@@ -26,11 +57,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    // Get price ID for the selected duration
-    const priceId = getPriceIdByDuration(duration);
-    if (!priceId) {
-      return NextResponse.json({ error: `No price configured for ${duration}-month plan` }, { status: 400 });
-    }
+    // priceId is determined above
 
     // Ensure Stripe customer exists
     const customerId = await ensureStripeCustomer({
@@ -51,17 +78,9 @@ export async function POST(req) {
       mode: "subscription",
       success_url: successUrl || STRIPE_CONFIG.SUCCESS_URL,
       cancel_url: cancelUrl || STRIPE_CONFIG.CANCEL_URL,
-      metadata: {
-        userId: user.id,
-        duration: duration.toString(),
-        plan_type: `${duration}_month`,
-      },
+      metadata: planId ? { userId: user.id, plan_id: String(planId) } : { userId: user.id, duration: String(resolvedDuration), plan_type: `${resolvedDuration}_month` },
       subscription_data: {
-        metadata: {
-          userId: user.id,
-          duration: duration.toString(),
-          plan_type: `${duration}_month`,
-        },
+        metadata: planId ? { userId: user.id, plan_id: String(planId) } : { userId: user.id, duration: String(resolvedDuration), plan_type: `${resolvedDuration}_month` },
       },
       // Enable customer portal for subscription management
       customer_update: {

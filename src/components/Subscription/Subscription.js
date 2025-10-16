@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { THEME } from "@/theme";
@@ -9,8 +9,12 @@ const Subscription = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [plans, setPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(true);
 
-  const handlePlanSelection = async (duration) => {
+  const handlePlanSelection = async (arg) => {
+    const duration = typeof arg === 'number' ? arg : arg?.duration;
+    const planId = typeof arg === 'object' ? arg?.planId : undefined;
     if (!isLoaded || !user) {
       setError("Please sign in to continue");
       return;
@@ -27,7 +31,7 @@ const Subscription = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          duration: duration,
+          ...(planId ? { planId } : { duration }),
           successUrl: `${window.location.origin}/subscription/success`,
           cancelUrl: `${window.location.origin}/subscription`,
         }),
@@ -52,96 +56,68 @@ const Subscription = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/plans');
+        const data = await res.json();
+        if (mounted && data.success) setPlans(data.plans || []);
+      } catch (_) {
+        // ignore
+      } finally {
+        if (mounted) setPlansLoading(false);
+      }
+    })();
+    return () => { mounted = false };
+  }, []);
   return (
     <div className="min-h-screen bg-white text-black p-8">
       {error && (
         <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center">{error}</div>
       )}
       <div className="flex flex-col lg:flex-row items-center justify-center gap-10">
-        {/* 6-month plan */}
-        <div
-          className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300"
-          style={{ background: THEME.surface }}
-        >
-          <div className="text-center">
-            <span className="text-4xl font-bold" style={{ color: THEME.primary }}>
-              £10 <small className="text-sm font-medium">/ month</small>
-            </span>
-            <p className="text-2xl mt-2 font-semibold " style={{ color: THEME.textSecondary }}>
-              6 Months
-            </p>
-            <p className="text-sm mt-4 " style={{ color: THEME.neutral700 }}>
-              Subscribe to unlock full access to{" "}
-              <strong className="">study materials, tests, performance tracking, and peer discussions</strong>
-              —everything you need to excel in your learning journey!
-            </p>
-          </div>
-          <ul className="mt-6 text-sm space-y-2 list-disc list-inside" style={{ color: THEME.neutral900 }}>
-            <li>Test mode</li>
-            <li>Practice mode</li>
-            <li>Performance tracking</li>
-            <li>Custom study plans</li>
-            <li>Exclusive updates</li>
-          </ul>
-          <div className="text-center mt-6">
-            <button
-              onClick={() => handlePlanSelection(6)}
-              disabled={loading}
-              className={`font-bold py-2 px-6 rounded-full shadow-lg transition ${
-                loading
-                  ? "bg-gray-400 text-white cursor-not-allowed"
-                  : "text-blue-900 hover:bg-blue-700 hover:text-white"
-              }`}
-            >
-              {loading ? "Processing..." : "Buy Plan"}
-            </button>
-          </div>
-        </div>
-
-        {/* 12-month plan */}
-        <div
-          className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300"
-          style={{ background: THEME.surface }}
-        >
-          <div className="text-center">
-            <span className="text-4xl font-bold" style={{ color: THEME.primary }}>
-              £20 <small className="text-sm font-medium ">/ month</small>
-            </span>
-            <p className="text-2xl mt-2 font-semibold " style={{ color: THEME.textSecondary }}>
-              12 Months
-            </p>
-            <p className="text-sm mt-4" style={{ color: THEME.neutral700 }}>
-              Subscribe to unlock full access to{" "}
-              <strong className="">study materials, tests, performance tracking, and peer discussions</strong>
-              —everything you need to excel in your learning journey!
-            </p>
-          </div>
-          <ul className="mt-6 text-sm space-y-2 list-disc list-inside">
-            <li>Test mode</li>
-            <li>Practice mode</li>
-            <li>Performance tracking</li>
-            <li>Custom study plans</li>
-            <li>Exclusive updates</li>
-          </ul>
-          <div className="text-center mt-6">
-            <button
-              onClick={() => handlePlanSelection(12)}
-              disabled={loading}
-              className={`font-bold py-2 px-6 rounded-full shadow-lg transition ${
-                loading
-                  ? "bg-gray-400 text-white cursor-not-allowed"
-                  : "text-blue-900 hover:bg-blue-700 hover:text-white"
-              }`}
-            >
-              {loading ? "Processing..." : "Buy Plan"}
-            </button>
-          </div>
-        </div>
+        {plansLoading ? (
+          <div className="text-center text-sm" style={{ color: THEME.neutral700 }}>Loading plans...</div>
+        ) : plans.length ? (
+          plans.map((p) => (
+            <div key={p.id} className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300" style={{ background: THEME.surface }}>
+              <div className="text-center">
+                <span className="text-4xl font-bold" style={{ color: THEME.primary }}>
+                  {p.currency} {Number(p.price).toFixed(2)}
+                </span>
+                <p className="text-2xl mt-2 font-semibold " style={{ color: THEME.textSecondary }}>
+                  {p.name} ({p.durationMonths} months)
+                </p>
+                <p className="text-sm mt-4 " style={{ color: THEME.neutral700 }}>
+                  {p.description || "Full access to study materials, tests, performance tracking, and more."}
+                </p>
+              </div>
+              {p.features?.length ? (
+                <ul className="mt-6 text-sm space-y-2 list-disc list-inside" style={{ color: THEME.neutral900 }}>
+                  {p.features.map((f, i) => (<li key={i}>{f}</li>))}
+                </ul>
+              ) : null}
+              <div className="text-center mt-6">
+                <button
+                  onClick={() => handlePlanSelection({ planId: p.id, duration: p.durationMonths })}
+                  disabled={loading}
+                  className={`font-bold py-2 px-6 rounded-full shadow-lg transition ${
+                    loading
+                      ? "bg-gray-400 text-white cursor-not-allowed"
+                      : "text-blue-900 hover:bg-blue-700 hover:text-white"
+                  }`}
+                >
+                  {loading ? "Processing..." : "Buy Plan"}
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center text-sm" style={{ color: THEME.neutral700 }}>No plans available. Please check back later.</div>
+        )}
       </div>
-
-      <h3 className="mt-10 text-center text-sm">
-        <strong>Note:</strong> Features are identical across plans—only the duration (6 or 12 months) differs.
-      </h3>
     </div>
   );
 };

@@ -5,6 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import {
   BarChart3,
   Users,
@@ -27,6 +30,11 @@ export default function AdminSubscriptionsPage() {
   const [refundLogsLoading, setRefundLogsLoading] = useState(false);
   const [refundingPayment, setRefundingPayment] = useState(null);
   const [timeGranularity, setTimeGranularity] = useState("monthly"); // monthly | yearly
+  // Plans state
+  const [plans, setPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [planForm, setPlanForm] = useState({ name: "", description: "", price: "", currency: "USD", durationMonths: "", isActive: true, features: "", stripeProductId: "", stripePriceId: "" });
   // const { isLoaded, isSignedIn, user } = useUser();
   // const [username, setUsername] = useState("");
 
@@ -84,6 +92,89 @@ export default function AdminSubscriptionsPage() {
     }
   };
 
+  // Plans CRUD
+  const fetchPlans = async () => {
+    try {
+      setPlansLoading(true);
+      const res = await fetch("/api/admin/plans");
+      const data = await res.json();
+      if (data.success) setPlans(data.plans);
+    } catch (e) {
+      console.error("Error fetching plans:", e);
+    } finally {
+      setPlansLoading(false);
+    }
+  };
+
+  const openCreatePlan = () => {
+    setEditingPlan(null);
+    setPlanForm({ name: "", description: "", price: "", currency: "USD", durationMonths: "", isActive: true, features: "", stripeProductId: "", stripePriceId: "" });
+  };
+
+  const openEditPlan = (plan) => {
+    setEditingPlan(plan);
+    setPlanForm({
+      name: plan.name,
+      description: plan.description || "",
+      price: String(plan.price),
+      currency: plan.currency || "USD",
+      durationMonths: String(plan.durationMonths),
+      isActive: plan.isActive,
+      features: (plan.features || []).join(", "),
+      stripeProductId: plan.stripeProductId || "",
+      stripePriceId: plan.stripePriceId || "",
+    });
+  };
+
+  const savePlan = async () => {
+    try {
+      const payload = {
+        name: planForm.name.trim(),
+        description: planForm.description.trim() || null,
+        price: parseFloat(planForm.price),
+        currency: planForm.currency.trim().toUpperCase(),
+        durationMonths: parseInt(planForm.durationMonths, 10),
+        isActive: Boolean(planForm.isActive),
+        features: planForm.features
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        stripeProductId: planForm.stripeProductId.trim() || null,
+        stripePriceId: planForm.stripePriceId.trim() || null,
+      };
+      if (!payload.name || !payload.price || !payload.durationMonths) {
+        toast.error("Name, price and duration are required");
+        return;
+      }
+
+      const res = await fetch(editingPlan ? `/api/admin/plans/${editingPlan.id}` : "/api/admin/plans", {
+        method: editingPlan ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to save plan");
+      toast.success(`Plan ${editingPlan ? "updated" : "created"} successfully`);
+      setEditingPlan(null);
+      await fetchPlans();
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
+  const deletePlan = async (plan) => {
+    if (!confirm(`Delete plan "${plan.name}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/plans/${plan.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete plan");
+      toast.success("Plan deleted");
+      await fetchPlans();
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
   // Handle refund
   const handleRefund = async (stripePaymentId, reason = "requested_by_customer") => {
     // Validate reason to match Stripe's accepted values
@@ -118,6 +209,7 @@ export default function AdminSubscriptionsPage() {
     fetchStats();
     fetchPaymentLogs();
     fetchRefundLogs();
+    fetchPlans();
   }, []);
 
   const getStatusIcon = (status) => {
@@ -189,10 +281,11 @@ export default function AdminSubscriptionsPage() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className='!text-gray-700'>Subscription Stats</TabsTrigger>
           <TabsTrigger value="payments" className='!text-gray-700'>Payment Logs</TabsTrigger>
           <TabsTrigger value="refunds" className='!text-gray-700'>Refund Logs</TabsTrigger>
+          <TabsTrigger value="plans" className='!text-gray-700'>Plans</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -477,6 +570,73 @@ export default function AdminSubscriptionsPage() {
         <TabsContent value="refunds" className="space-y-6">
           <RefundLogs refundLogs={refundLogs} refundLogsLoading={refundLogsLoading} />
         </TabsContent>
+
+      <TabsContent value="plans" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Subscription Plans</CardTitle>
+                <CardDescription>Create, edit, or delete plans</CardDescription>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button onClick={openCreatePlan}>Add Plan</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[480px]">
+                  <DialogHeader>
+                    <DialogTitle>{editingPlan ? "Edit Plan" : "Add Plan"}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-3 py-2">
+                    <Input placeholder="Name" value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} />
+                    <Input placeholder="Description" value={planForm.description} onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })} />
+                    <div className="grid grid-cols-3 gap-2">
+                      <Input placeholder="Price" value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })} />
+                      <Input placeholder="Currency" value={planForm.currency} onChange={(e) => setPlanForm({ ...planForm, currency: e.target.value })} />
+                      <Input placeholder="Duration (months)" value={planForm.durationMonths} onChange={(e) => setPlanForm({ ...planForm, durationMonths: e.target.value })} />
+                    </div>
+                    <Input placeholder="Features (comma separated)" value={planForm.features} onChange={(e) => setPlanForm({ ...planForm, features: e.target.value })} />
+                  <Input placeholder="Stripe Product ID (optional)" value={planForm.stripeProductId} onChange={(e) => setPlanForm({ ...planForm, stripeProductId: e.target.value })} />
+                  <Input placeholder="Stripe Price ID (required to sell)" value={planForm.stripePriceId} onChange={(e) => setPlanForm({ ...planForm, stripePriceId: e.target.value })} />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={savePlan}>{editingPlan ? "Update" : "Create"}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {plansLoading ? (
+              <div className="flex items-center justify-center p-6"><RefreshCw className="h-4 w-4 animate-spin" /></div>
+            ) : (
+              <div className="grid gap-3">
+                {plans.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No plans yet.</div>
+                ) : (
+                  plans.map((plan) => (
+                    <div key={plan.id} className="flex items-center justify-between rounded border p-3">
+                      <div className="space-y-1">
+                        <div className="font-medium">{plan.name} <span className="text-muted-foreground">({plan.durationMonths} mo)</span></div>
+                        <div className="text-sm text-muted-foreground">{plan.description}</div>
+                        <div className="text-sm">{plan.currency} {Number(plan.price).toFixed(2)}</div>
+                        {plan.features?.length ? (
+                          <div className="text-xs text-muted-foreground">Features: {plan.features.join(", ")}</div>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={plan.isActive ? "default" : "outline"}>{plan.isActive ? "Active" : "Inactive"}</Badge>
+                        <Button variant="secondary" onClick={() => openEditPlan(plan)}>Edit</Button>
+                        <Button variant="destructive" onClick={() => deletePlan(plan)}>Delete</Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
       </Tabs>
     </div>
   );
