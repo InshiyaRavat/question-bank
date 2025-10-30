@@ -12,45 +12,30 @@ const Subscription = () => {
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
 
-  // Client-side redirection logic extracted from pay/page.js
   useEffect(() => {
-    if (!isLoaded) return; // wait for Clerk
-
-    // Unauthenticated → sign-in
-    if (!user) {
-      router.push("/sign-in");
-      return;
+    if (user) {
+      fetchSubscription();
     }
+  }, [user, isLoaded]);
 
-    // Admin → admin panel
-    const role = user?.publicMetadata?.role || user?.unsafeMetadata?.role;
-    if (role === "admin") {
-      router.push("/admin/users");
-      return;
-    }
-
-    // Check active subscription and redirect
-    (async () => {
-      try {
-        const res = await fetch(`/api/subscription?userid=${user.id}`);
-        const data = await res.json();
-        if (data?.success && data?.subscription) {
-          const status = data.subscription.status;
-          const isActive = data.subscription.isActive === true;
-          if (isActive || status === "active") {
-            router.push("/question-topic");
-          }
-        }
-      } catch (_e) {
-        // ignore network/API errors for redirect path
+  const fetchSubscription = async () => {
+    try {
+      const subscription = await fetch(`/api/subscription?userid=${user.id}`);
+      const data = await subscription.json();
+      if (data.success && data.subscription) {
+        router.push("/dashboard");
       }
-    })();
-  }, [isLoaded, user, router]);
+    } catch (error) {
+      console.error("Error occurred while fetching subscription status:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePlanSelection = async (arg) => {
-    const duration = typeof arg === 'number' ? arg : arg?.duration;
-    const planId = typeof arg === 'object' ? arg?.planId : undefined;
-    if (!isLoaded || !user) {
+    const duration = typeof arg === "number" ? arg : arg?.duration;
+    const planId = typeof arg === "object" ? arg?.planId : undefined;
+    if (!user) {
       setError("Please sign in to continue");
       return;
     }
@@ -96,7 +81,7 @@ const Subscription = () => {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetch('/api/plans');
+        const res = await fetch("/api/plans");
         const data = await res.json();
         if (mounted && data.success) setPlans(data.plans || []);
       } catch (_) {
@@ -105,7 +90,9 @@ const Subscription = () => {
         if (mounted) setPlansLoading(false);
       }
     })();
-    return () => { mounted = false };
+    return () => {
+      mounted = false;
+    };
   }, []);
   return (
     <div className="min-h-screen bg-white text-black p-8">
@@ -114,10 +101,16 @@ const Subscription = () => {
       )}
       <div className="flex flex-col lg:flex-row items-center justify-center gap-10">
         {plansLoading ? (
-          <div className="text-center text-sm" style={{ color: THEME.neutral700 }}>Loading plans...</div>
+          <div className="text-center text-sm" style={{ color: THEME.neutral700 }}>
+            Loading plans...
+          </div>
         ) : plans.length ? (
           plans.map((p) => (
-            <div key={p.id} className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300" style={{ background: THEME.surface }}>
+            <div
+              key={p.id}
+              className="text-black rounded-2xl shadow-lg p-8 w-full max-w-md transform transition duration-300"
+              style={{ background: THEME.surface }}
+            >
               <div className="text-center">
                 <span className="text-4xl font-bold" style={{ color: THEME.primary }}>
                   {p.currency} {Number(p.price).toFixed(2)}
@@ -131,7 +124,9 @@ const Subscription = () => {
               </div>
               {p.features?.length ? (
                 <ul className="mt-6 text-sm space-y-2 list-disc list-inside" style={{ color: THEME.neutral900 }}>
-                  {p.features.map((f, i) => (<li key={i}>{f}</li>))}
+                  {p.features.map((f, i) => (
+                    <li key={i}>{f}</li>
+                  ))}
                 </ul>
               ) : null}
               <div className="text-center mt-6">
@@ -150,7 +145,9 @@ const Subscription = () => {
             </div>
           ))
         ) : (
-          <div className="text-center text-sm" style={{ color: THEME.neutral700 }}>No plans available. Please check back later.</div>
+          <div className="text-center text-sm" style={{ color: THEME.neutral700 }}>
+            No plans available. Please check back later.
+          </div>
         )}
       </div>
     </div>
