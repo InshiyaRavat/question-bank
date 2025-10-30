@@ -100,6 +100,11 @@ model Subscription {
   cancelAtPeriodEnd    Boolean   @default(false) @map("cancel_at_period_end")
   trialEnd             DateTime? @map("trial_end")
   nextBillingDate      DateTime? @map("next_billing_date")
+  // Coupon tracking fields
+  appliedCouponId      String?   @map("applied_coupon_id")
+  appliedPromotionCode String?   @map("applied_promotion_code")
+  discountAmount       Float?    @map("discount_amount")
+  originalAmount       Float?    @map("original_amount")
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
@@ -107,21 +112,23 @@ model Subscription {
   @@index([status])
   @@index([stripeCustomerId])
   @@index([currentPeriodEnd])
+  @@index([appliedCouponId])
+  @@index([appliedPromotionCode])
 }
 
 model SubscriptionPlan {
-  id               Int      @id @default(autoincrement())
-  name             String
-  description      String?
-  price            Float
-  currency         String   @default("USD")
-  durationMonths   Int      @map("duration_months") // 1, 3, 6, 12, etc.
-  isActive         Boolean  @default(true) @map("is_active")
-  stripeProductId  String?  @map("stripe_product_id")
-  stripePriceId    String?  @map("stripe_price_id")
-  features         String[] @default([])
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id              Int      @id @default(autoincrement())
+  name            String
+  description     String?
+  price           Float
+  currency        String   @default("USD")
+  durationMonths  Int      @map("duration_months") // 1, 3, 6, 12, etc.
+  isActive        Boolean  @default(true) @map("is_active")
+  stripeProductId String?  @map("stripe_product_id")
+  stripePriceId   String?  @map("stripe_price_id")
+  features        String[] @default([])
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@unique([name, durationMonths])
   @@index([isActive])
@@ -224,19 +231,6 @@ model TestSession {
   @@index([sessionId])
   @@index([status])
   @@index([startedAt])
-}
-
-model SiteSettings {
-  id          Int      @id @default(autoincrement())
-  key         String   @unique
-  value       String? // Store JSON or string values
-  type        String   @default("string") // string, json, base64, boolean
-  description String?
-  updatedBy   String?  @map("updated_by") // Admin ID who updated
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@index([key])
 }
 
 model Feedback {
@@ -367,4 +361,46 @@ model UserFreeTrialUsage {
   @@index([userId])
   @@index([date])
   @@index([topicId])
+}
+
+// Content Management and Branding Models
+model SiteSettings {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  type      String   @default("string") // string, json, boolean, number
+  category  String   @default("general") // branding, content, seo, social, features
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}
+
+model ContentBlock {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  title     String
+  content   String
+  type      String   @default("text") // text, html, json, image
+  category  String   @default("general") // hero, features, testimonials, footer
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  metadata  String? // JSON string for additional data
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("content_blocks")
+}
+
+model FeatureToggle {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  name        String
+  description String?
+  isEnabled   Boolean  @default(false) @map("is_enabled")
+  category    String   @default("general")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("feature_toggles")
 }

@@ -42,6 +42,32 @@ async function handleSubscriptionCreated(subscription) {
 
   const existing = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: subscription.id } });
   if (!existing) {
+    // Extract coupon information from subscription
+    let appliedCouponId = null;
+    let appliedPromotionCode = null;
+    let discountAmount = null;
+    let originalAmount = null;
+
+    if (subscription.discount && subscription.discount.coupon) {
+      appliedCouponId = subscription.discount.coupon.id;
+    }
+
+    // Get the original amount from the price
+    const price = subscription.items.data[0].price;
+    if (price.unit_amount) {
+      originalAmount = price.unit_amount / 100; // Convert from pence to pounds
+    }
+
+    // Calculate discount amount if coupon was applied
+    if (subscription.discount && subscription.discount.coupon) {
+      const coupon = subscription.discount.coupon;
+      if (coupon.percent_off && originalAmount) {
+        discountAmount = (originalAmount * coupon.percent_off) / 100;
+      } else if (coupon.amount_off) {
+        discountAmount = coupon.amount_off / 100; // Convert from pence to pounds
+      }
+    }
+
     await prisma.subscription.create({
       data: {
         userId,
@@ -53,6 +79,11 @@ async function handleSubscriptionCreated(subscription) {
         currentPeriodEnd: toDateOrNowSeconds(subscription.current_period_end),
         cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         subscribedAt: new Date(),
+        // Coupon tracking
+        appliedCouponId,
+        appliedPromotionCode,
+        discountAmount,
+        originalAmount,
       },
     });
   }

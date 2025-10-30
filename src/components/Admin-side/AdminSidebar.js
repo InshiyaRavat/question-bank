@@ -19,6 +19,8 @@ import {
   Trash2,
   Flag,
   Image,
+  Tag,
+  Palette,
 } from "lucide-react";
 
 import {
@@ -128,6 +130,18 @@ const adminNavItems = [
     url: "/admin/subscriptions",
     icon: CreditCard,
     description: "Manage user plans",
+  },
+  {
+    title: "Coupons & Discounts",
+    url: "/admin/coupons",
+    icon: Tag,
+    description: "Manage discount coupons and promotion codes",
+  },
+  {
+    title: "Content Management",
+    url: "/admin/content",
+    icon: Palette,
+    description: "Manage site content, branding, and settings",
   },
   {
     title: "Activity Logs",

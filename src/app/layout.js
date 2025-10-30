@@ -7,12 +7,26 @@ import { SelectedTopicsProvider } from "@/context/SelectedTopicsContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Inter } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
+import { getSiteSettings as getSiteSettingsLib } from "@/lib/site-content";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "Question Bank",
-  description: "Practice questions, test mode, analytics, and study tools.",
+const getSiteSettings = async () => {
+  try {
+    const settings = await getSiteSettingsLib();
+    return settings;
+  } catch (error) {
+    console.error("Error fetching site settings:", error);
+    return {};
+  }
+};
+
+export const generateMetadata = async () => {
+  const settings = await getSiteSettings();
+  return {
+    title: settings.siteTitle || "Question Bank",
+    description: settings.metaDescription || "Practice questions, test mode, analytics, and study tools.",
+  };
 };
 
 export default function RootLayout({ children }) {
