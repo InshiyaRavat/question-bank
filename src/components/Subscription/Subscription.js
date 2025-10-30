@@ -12,6 +12,41 @@ const Subscription = () => {
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
 
+  // Client-side redirection logic extracted from pay/page.js
+  useEffect(() => {
+    if (!isLoaded) return; // wait for Clerk
+
+    // Unauthenticated → sign-in
+    if (!user) {
+      router.push("/sign-in");
+      return;
+    }
+
+    // Admin → admin panel
+    const role = user?.publicMetadata?.role || user?.unsafeMetadata?.role;
+    if (role === "admin") {
+      router.push("/admin/users");
+      return;
+    }
+
+    // Check active subscription and redirect
+    (async () => {
+      try {
+        const res = await fetch(`/api/subscription?userid=${user.id}`);
+        const data = await res.json();
+        if (data?.success && data?.subscription) {
+          const status = data.subscription.status;
+          const isActive = data.subscription.isActive === true;
+          if (isActive || status === "active") {
+            router.push("/question-topic");
+          }
+        }
+      } catch (_e) {
+        // ignore network/API errors for redirect path
+      }
+    })();
+  }, [isLoaded, user, router]);
+
   const handlePlanSelection = async (arg) => {
     const duration = typeof arg === 'number' ? arg : arg?.duration;
     const planId = typeof arg === 'object' ? arg?.planId : undefined;
